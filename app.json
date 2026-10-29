@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "IPTV Neo",
+    "slug": "iptv-neo",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#07090E",
+    "splash": {
+      "backgroundColor": "#07090E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iptvneo.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#07090E",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "plugins": [
+      "expo-video"
+    ]
+  }
+}
