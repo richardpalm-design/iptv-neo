@@ -19,6 +19,7 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app || sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
+          swift --version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,13 +33,22 @@ jobs:
           sudo ln -sf $(which node) /usr/local/bin/node
           sudo mkdir -p /opt/homebrew/bin
           sudo ln -sf $(which node) /opt/homebrew/bin/node || true
-          echo "Node version: $(node -v) at $(which node)"
 
       - name: Install dependencies
         run: npm install
 
+      - name: Patch Swift Tools Version for Xcode 16
+        run: |
+          echo "Patching Package.swift files from Swift 6.2 to 6.0..."
+          find node_modules -name "Package.swift" -exec sed -i '' 's/swift-tools-version: 6.2/swift-tools-version: 6.0/g' {} +
+
       - name: Generate iOS Native Project
         run: npx expo prebuild --platform ios --clean
+
+      - name: Patch Native Packages to Swift 6.0
+        run: |
+          find node_modules -name "Package.swift" -exec sed -i '' 's/swift-tools-version: 6.2/swift-tools-version: 6.0/g' {} +
+          find ios -name "Package.swift" -exec sed -i '' 's/swift-tools-version: 6.2/swift-tools-version: 6.0/g' {} + 2>/dev/null || true
 
       - name: Install CocoaPods
         run: |
