@@ -15,8 +15,10 @@
       "bundleIdentifier": "com.iptvneo.app",
       "infoPlist": {
         "UIBackgroundModes": [
+          "audio",
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,6 +29,11 @@
     },
     "plugins": [
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "38e3764c-094f-4617-b131-fa28c1c6ee66"
+      }
+    }
   }
 }
