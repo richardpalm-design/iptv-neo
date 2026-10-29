@@ -26,6 +26,14 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Link Node to Global Paths for Xcode
+        run: |
+          sudo mkdir -p /usr/local/bin
+          sudo ln -sf $(which node) /usr/local/bin/node
+          sudo mkdir -p /opt/homebrew/bin
+          sudo ln -sf $(which node) /opt/homebrew/bin/node || true
+          echo "Node version: $(node -v) at $(which node)"
+
       - name: Install dependencies
         run: npm install
 
@@ -37,13 +45,13 @@ jobs:
           cd ios
           pod install --repo-update || pod install
 
-      - name: Disable Code Signing in Pods
+      - name: Configure Xcode Projects for Unsigned Build
         run: |
           cd ios
-          if [ -f "Pods/Pods.xcodeproj/project.pbxproj" ]; then
-            sed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' Pods/Pods.xcodeproj/project.pbxproj || true
-            sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' Pods/Pods.xcodeproj/project.pbxproj || true
-          fi
+          # Ensure manual signing and disable code signing across all projects & pods
+          find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES/CODE_SIGNING_ALLOWED = NO/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' {} +
 
       - name: Build iOS Release App
         run: |
@@ -52,23 +60,39 @@ jobs:
           SCHEME="IPTVNeo"
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
 
+          set -o pipefail
           xcodebuild build \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -configuration Release \
+            -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee xcodebuild.log || {
+              echo "=== XCODEBUILD FAILED! RECENT ERRORS: ==="
+              grep -C 3 -E "error:|fatal error:|Command PhaseScriptExecution failed" xcodebuild.log || tail -n 80 xcodebuild.log
+              exit 1
+            }
 
       - name: Package into .ipa
         run: |
           cd ios
           mkdir -p Payload
           APP_FILE=$(find build/Build/Products/Release-iphoneos -name "*.app" -type d | head -n 1)
-          echo "Packaging App: $APP_FILE"
+          echo "Found compiled app at: $APP_FILE"
+          
+          if [ -z "$APP_FILE" ]; then
+            echo "Error: Could not find compiled .app file!"
+            exit 1
+          fi
+
           cp -r "$APP_FILE" Payload/
           zip -r ../IPTVNeo.ipa Payload
 
