@@ -204,54 +204,65 @@ function cleanServerUrl(raw) {
   return url.replace(/\/+$/, '');
 }
 
-// Multi-Tier Robust Fetcher: Handles Netlify Functions, Direct, and CORS Proxies
+// High-Speed Multi-Tier Proxy Fetcher (Handles HTTP on HTTPS Mixed Content & CORS)
 async function robustFetch(url, isJson = true) {
   url = url.trim();
 
+  // Tiered endpoints:
+  // 1. Cloudflare Workers Proxy (blazing fast, no rate-limit, handles HTTP on HTTPS)
+  // 2. Netlify Serverless Proxy
+  // 3. Direct fetch (if already HTTPS)
+  // 4. AllOrigins Proxy
   const attempts = [
-    // 1. Netlify Serverless Proxy (Runs if deployed on Netlify)
-    `/.netlify/functions/proxy?url=${encodeURIComponent(url)}`,
-    // 2. Direct fetch (works on localhost or HTTPS endpoints)
-    url,
-    // 3. High-speed public CORS proxies
-    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+    {
+      name: 'Cloudflare Worker',
+      getUrl: u => `https://cors.eu.org/${u}`,
+      parse: res => (isJson ? res.json() : res.text())
+    },
+    {
+      name: 'Netlify Proxy',
+      getUrl: u => `/.netlify/functions/proxy?url=${encodeURIComponent(u)}`,
+      parse: res => (isJson ? res.json() : res.text())
+    },
+    {
+      name: 'Direct',
+      getUrl: u => u,
+      parse: res => (isJson ? res.json() : res.text())
+    },
+    {
+      name: 'AllOrigins',
+      getUrl: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+      parse: async res => {
+        const j = await res.json();
+        return isJson ? JSON.parse(j.contents) : j.contents;
+      }
+    }
   ];
 
   let lastError = null;
 
-  for (const proxyUrl of attempts) {
+  for (const attempt of attempts) {
     try {
+      const target = attempt.getUrl(url);
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 18000); // 18s per attempt
+      const timeout = setTimeout(() => controller.abort(), 16000); // 16s timeout per tier
 
-      const res = await fetch(proxyUrl, { signal: controller.signal });
+      const res = await fetch(target, { signal: controller.signal });
       clearTimeout(timeout);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      if (isJson) {
-        const text = await res.text();
-        try {
-          return JSON.parse(text);
-        } catch (jsonErr) {
-          throw new Error('Svaret från servern var inte giltig JSON.');
-        }
-      } else {
-        const text = await res.text();
-        if (text && text.length > 5) return text;
-        throw new Error('Tomt svar från servern');
-      }
+      const result = await attempt.parse(res);
+      if (result) return result;
     } catch (err) {
       lastError = err;
-      console.warn(`Fetch via ${proxyUrl} misslyckades:`, err.message);
+      console.warn(`[Proxy ${attempt.name}] misslyckades:`, err.message);
     }
   }
 
-  throw lastError || new Error('Kunde inte ansluta till IPTV-servern.');
+  throw lastError || new Error('Kunde inte ansluta till IPTV-servern. Kontrollera URL och nätverk.');
 }
 
 // Status Box Helper for Account Modal
@@ -272,42 +283,61 @@ function hideModalStatus() {
 
 // Xtream Login Handler
 async function handleXtreamSubmit(e) {
-  e.preventDefault();
-  const name = document.getElementById('xtream-name').value.trim() || 'Mitt IPTV';
-  const server = cleanServerUrl(document.getElementById('xtream-server').value);
-  const user = document.getElementById('xtream-user').value.trim();
-  const pass = document.getElementById('xtream-pass').value.trim();
+  if (e && e.preventDefault) e.preventDefault();
+  
+  const nameInput = document.getElementById('xtream-name');
+  const serverInput = document.getElementById('xtream-server');
+  const userInput = document.getElementById('xtream-user');
+  const passInput = document.getElementById('xtream-pass');
+
+  const name = (nameInput ? nameInput.value : state.activeAccount?.name) || 'Mitt IPTV';
+  const server = cleanServerUrl(serverInput ? serverInput.value : state.activeAccount?.serverUrl);
+  const user = (userInput ? userInput.value : state.activeAccount?.username || '').trim();
+  const pass = (passInput ? passInput.value : state.activeAccount?.password || '').trim();
+
+  if (!server || !user || !pass) {
+    showModalStatus('Vänligen fyll i Server URL, Användarnamn och Lösenord.', true, false);
+    return;
+  }
 
   const submitBtn = document.getElementById('btn-xtream-submit');
-  submitBtn.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
   showModalStatus('Ansluter till IPTV-servern...', false, true);
 
   const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
   try {
     // 1. Authenticate with server
-    const authData = await robustFetch(base, true);
-
-    if (authData?.user_info?.auth === 0) {
-      throw new Error('Inloggningen nekades: Felaktigt användarnamn eller lösenord.');
+    let authData = await robustFetch(base, true);
+    if (typeof authData === 'string') {
+      try { authData = JSON.parse(authData); } catch (e) {}
     }
 
-    const status = authData?.user_info?.status || 'Active';
+    if (authData?.user_info && String(authData.user_info.auth) === '0') {
+      throw new Error('Inloggningen nekades av servern (Felaktigt användarnamn eller lösenord).');
+    }
+
+    const status = authData?.user_info?.status || 'Aktiv';
     let expDate = 'Obegränsad';
     if (authData?.user_info?.exp_date) {
       const expTimestamp = parseInt(authData.user_info.exp_date);
-      if (!isNaN(expTimestamp)) {
+      if (!isNaN(expTimestamp) && expTimestamp > 0) {
         expDate = new Date(expTimestamp * 1000).toLocaleDateString('sv-SE');
       }
     }
 
-    showModalStatus('Inloggad! Hämtar kanallistor och kategorier...', false, true);
+    showModalStatus('Inloggad! Hämtar kanallistor...', false, true);
 
-    // 2. Fetch categories and streams
-    const [liveCats, liveStreams, vodStreams] = await Promise.all([
-      robustFetch(`${base}&action=get_live_categories`, true).catch(() => []),
-      robustFetch(`${base}&action=get_live_streams`, true).catch(() => []),
-      robustFetch(`${base}&action=get_vod_streams`, true).catch(() => [])
+    // 2. Fetch live streams and categories
+    const [liveCats, liveStreams] = await Promise.all([
+      robustFetch(`${base}&action=get_live_categories`, true).catch(err => {
+        console.warn('Could not load categories:', err);
+        return [];
+      }),
+      robustFetch(`${base}&action=get_live_streams`, true).catch(err => {
+        console.warn('Could not load streams:', err);
+        return [];
+      })
     ]);
 
     const channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
@@ -320,23 +350,11 @@ async function handleXtreamSubmit(e) {
       epg: 'Livesändning'
     }));
 
-    const movies = (Array.isArray(vodStreams) ? vodStreams : []).map(m => ({
-      id: `vod_${m.stream_id}`,
-      streamId: m.stream_id,
-      name: m.name,
-      poster: m.stream_icon,
-      url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
-      categoryId: String(m.category_id || 'all'),
-      rating: m.rating || '8.0',
-      year: m.year || '',
-      plot: m.plot || ''
-    }));
-
-    if (channels.length === 0 && movies.length === 0) {
-      throw new Error('Kontot är inloggat, men servern returnerade 0 kanaler.');
+    if (channels.length === 0) {
+      throw new Error('Inloggningen lyckades men servern returnerade 0 aktiva kanaler.');
     }
 
-    // Save and activate account
+    // Save account
     const account = {
       id: 'acc_' + Date.now(),
       name,
@@ -352,7 +370,7 @@ async function handleXtreamSubmit(e) {
     state.accounts.unshift(account);
     state.activeAccount = account;
     state.channels = channels;
-    state.movies = movies;
+    state.movies = [];
     state.series = [];
     state.liveCategories = [
       { id: 'all', name: 'Alla kanaler' },
@@ -360,36 +378,57 @@ async function handleXtreamSubmit(e) {
     ];
 
     saveAccounts();
-    showModalStatus(`Klart! Laddade ${channels.length} kanaler och ${movies.length} filmer.`, false, false);
+    showModalStatus(`Klart! Laddade ${channels.length} kanaler.`, false, false);
+
+    // Load VOD in background
+    robustFetch(`${base}&action=get_vod_streams`, true).then(vodStreams => {
+      if (Array.isArray(vodStreams) && vodStreams.length > 0) {
+        state.movies = vodStreams.map(m => ({
+          id: `vod_${m.stream_id}`,
+          streamId: m.stream_id,
+          name: m.name,
+          poster: m.stream_icon,
+          url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
+          categoryId: String(m.category_id || 'all'),
+          rating: m.rating || '8.0',
+          year: m.year || '',
+          plot: m.plot || ''
+        }));
+        if (state.currentTab === 'movies' || state.currentTab === 'home') {
+          renderCurrentTab();
+        }
+      }
+    }).catch(e => console.log('VOD deferred:', e));
 
     setTimeout(() => {
       closeModal();
       renderCurrentTab();
-    }, 800);
+    }, 600);
   } catch (err) {
-    showModalStatus('Fel vid anslutning: ' + err.message, true, false);
+    showModalStatus('Anslutningsfel: ' + err.message, true, false);
   } finally {
-    submitBtn.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
 // M3U Playlist Handler (URL, File, or Text)
 async function handleM3USubmit(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
+
   const name = document.getElementById('m3u-name').value.trim() || 'Min M3U';
   const url = document.getElementById('m3u-url').value.trim();
   const fileInput = document.getElementById('m3u-file');
   const textInput = document.getElementById('m3u-text').value.trim();
   const submitBtn = document.getElementById('btn-m3u-submit');
 
-  submitBtn.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
 
   try {
     let content = '';
 
-    // Option 1: File Upload
+    // Option 1: File Upload (Fastest, zero network)
     if (fileInput.files && fileInput.files.length > 0) {
-      showModalStatus('Läser in M3U-fil från enheten...', false, true);
+      showModalStatus('Läser in fil från enheten...', false, true);
       const file = fileInput.files[0];
       content = await file.text();
     }
@@ -398,7 +437,7 @@ async function handleM3USubmit(e) {
       showModalStatus('Tolkar klistrad spellista...', false, true);
       content = textInput;
     }
-    // Option 3: Download from URL
+    // Option 3: Download from URL via Cloudflare Worker proxy
     else if (url.length > 0) {
       showModalStatus('Laddar ner M3U-spellista via proxy...', false, true);
       content = await robustFetch(url, false);
@@ -413,18 +452,19 @@ async function handleM3USubmit(e) {
     setTimeout(() => {
       closeModal();
       renderCurrentTab();
-    }, 800);
+    }, 600);
   } catch (err) {
     showModalStatus('Kunde inte läsa spellistan: ' + err.message, true, false);
   } finally {
-    submitBtn.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
-// M3U Parser
+// Robust M3U Parser
 function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
   if (!content) throw new Error('Spellistan är tom.');
 
+  content = content.replace(/^\uFEFF/, '').trim();
   const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const channels = [];
   const catMap = {};
@@ -1002,10 +1042,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (state.accounts.length > 0) {
     state.activeAccount = state.accounts[0];
     if (state.activeAccount.type === 'xtream') {
-      document.getElementById('xtream-name').value = state.activeAccount.name;
-      document.getElementById('xtream-server').value = state.activeAccount.serverUrl;
-      document.getElementById('xtream-user').value = state.activeAccount.username;
-      document.getElementById('xtream-pass').value = state.activeAccount.password;
+      const serverInput = document.getElementById('xtream-server');
+      const userInput = document.getElementById('xtream-user');
+      const passInput = document.getElementById('xtream-pass');
+      if (serverInput) serverInput.value = state.activeAccount.serverUrl;
+      if (userInput) userInput.value = state.activeAccount.username;
+      if (passInput) passInput.value = state.activeAccount.password;
       handleXtreamSubmit({ preventDefault: () => {} });
     } else {
       launchDemo();
