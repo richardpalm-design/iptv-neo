@@ -9,13 +9,13 @@ const DEMO_DATA = {
     type: 'demo',
     serverUrl: 'demo.iptvneo.app',
     status: 'Aktiv (Demo)',
-    expDate: 'ObegrÃ¤nsad'
+    expDate: 'ObegrÃƒÂ¤nsad'
   },
   liveCategories: [
     { id: 'all', name: 'Alla kanaler' },
     { id: 'nordic', name: 'Sverige & Norden' },
     { id: 'sports', name: 'Sport & Premium' },
-    { id: 'news', name: 'Nyheter & DokumentÃ¤r' },
+    { id: 'news', name: 'Nyheter & DokumentÃƒÂ¤r' },
     { id: 'world', name: 'Internationellt' }
   ],
   channels: [
@@ -35,7 +35,7 @@ const DEMO_DATA = {
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/SVT2_logo_2016.svg/320px-SVT2_logo_2016.svg.png',
       url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
       categoryId: 'nordic',
-      epg: 'Vetenskapens vÃ¤rld (20:00 - 21:00)'
+      epg: 'Vetenskapens vÃƒÂ¤rld (20:00 - 21:00)'
     },
     {
       id: 'tv4',
@@ -85,7 +85,7 @@ const DEMO_DATA = {
   ],
   movieCategories: [
     { id: 'all', name: 'Alla filmer' },
-    { id: 'action', name: 'Action & Ã„ventyr' },
+    { id: 'action', name: 'Action & Ãƒâ€žventyr' },
     { id: 'scifi', name: 'Sci-Fi & Thriller' },
     { id: 'drama', name: 'Drama & Nordic Noir' }
   ],
@@ -99,7 +99,7 @@ const DEMO_DATA = {
       categoryId: 'scifi',
       rating: '8.6',
       year: '2024',
-      plot: 'I en futuristisk dystopi fÃ¶rsÃ¶ker en grupp forskare rÃ¤dda mÃ¤nskligheten med hjÃ¤lp av artificiell intelligens och tidsfÃ¶rskjutning.'
+      plot: 'I en futuristisk dystopi fÃƒÂ¶rsÃƒÂ¶ker en grupp forskare rÃƒÂ¤dda mÃƒÂ¤nskligheten med hjÃƒÂ¤lp av artificiell intelligens och tidsfÃƒÂ¶rskjutning.'
     },
     {
       id: 'mov2',
@@ -110,7 +110,7 @@ const DEMO_DATA = {
       categoryId: 'action',
       rating: '8.1',
       year: '2023',
-      plot: 'NÃ¤r skogens lugn stÃ¶rs av tre busiga gnagare tar en enorm skogshare saken i egna tassar i en actionfylld komedi.'
+      plot: 'NÃƒÂ¤r skogens lugn stÃƒÂ¶rs av tre busiga gnagare tar en enorm skogshare saken i egna tassar i en actionfylld komedi.'
     },
     {
       id: 'mov3',
@@ -121,7 +121,7 @@ const DEMO_DATA = {
       categoryId: 'action',
       rating: '8.9',
       year: '2024',
-      plot: 'En ensam krigardotter reser genom snÃ¶klÃ¤dda berg och farliga Ã¶demarker fÃ¶r att Ã¥terfÃ¶renas med sin fÃ¶rlorade drakunge.'
+      plot: 'En ensam krigardotter reser genom snÃƒÂ¶klÃƒÂ¤dda berg och farliga ÃƒÂ¶demarker fÃƒÂ¶r att ÃƒÂ¥terfÃƒÂ¶renas med sin fÃƒÂ¶rlorade drakunge.'
     },
     {
       id: 'mov4',
@@ -132,7 +132,7 @@ const DEMO_DATA = {
       categoryId: 'drama',
       rating: '8.4',
       year: '2024',
-      plot: 'Ett iskallt mysterium skakar en enslig by i norra Sverige dÃ¤r en polisinspektÃ¶r avslÃ¶jar mÃ¶rka familjehemligheter.'
+      plot: 'Ett iskallt mysterium skakar en enslig by i norra Sverige dÃƒÂ¤r en polisinspektÃƒÂ¶r avslÃƒÂ¶jar mÃƒÂ¶rka familjehemligheter.'
     }
   ],
   series: [
@@ -142,7 +142,7 @@ const DEMO_DATA = {
       poster: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600',
       rating: '9.1',
       seasons: 2,
-      plot: 'En expedition bortom solsystemets grÃ¤nser stÃ¶ter pÃ¥ anomalier som bÃ¶jer tid och rum.'
+      plot: 'En expedition bortom solsystemets grÃƒÂ¤nser stÃƒÂ¶ter pÃƒÂ¥ anomalier som bÃƒÂ¶jer tid och rum.'
     },
     {
       id: 'ser2',
@@ -150,7 +150,7 @@ const DEMO_DATA = {
       poster: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=600',
       rating: '8.7',
       seasons: 3,
-      plot: 'En undre vÃ¤rld i fÃ¶rÃ¤ndring kolliderar med finanseliten i Stockholms innerstad.'
+      plot: 'En undre vÃƒÂ¤rld i fÃƒÂ¶rÃƒÂ¤ndring kolliderar med finanseliten i Stockholms innerstad.'
     }
   ]
 };
@@ -284,7 +284,7 @@ async function robustFetch(url, isJson = true) {
     }
   }
 
-  throw lastError || new Error('Kunde inte ansluta till IPTV-servern. Kontrollera URL och nÃ¤tverk.');
+  throw lastError || new Error('Kunde inte ansluta till IPTV-servern. Kontrollera URL och nÃƒÂ¤tverk.');
 }
 
 // Status Box Helper for Account Modal
@@ -295,7 +295,7 @@ function showModalStatus(message, isError = false, isLoading = false) {
   box.style.background = isError ? 'rgba(255, 55, 95, 0.2)' : 'rgba(10, 132, 255, 0.2)';
   box.style.border = `1px solid ${isError ? '#FF375F' : '#0A84FF'}`;
   box.style.color = isError ? '#FF6987' : '#64D2FF';
-  box.innerHTML = `${isLoading ? 'â³ ' : isError ? 'âš ï¸ ' : 'âœ… '} ${message}`;
+  box.innerHTML = `${isLoading ? 'Ã¢ÂÂ³ ' : isError ? 'Ã¢Å¡Â Ã¯Â¸Â ' : 'Ã¢Å“â€¦ '} ${message}`;
 }
 
 function hideModalStatus() {
@@ -312,10 +312,10 @@ function renderLoadingHome(message = 'Ansluter till Sverige 8K...') {
       <div style="width: 52px; height: 52px; border: 3px solid rgba(10,132,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 24px;"></div>
       <div style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">${message}</div>
       <div style="font-size: 13px; color: var(--text-muted); max-width: 340px; line-height: 1.5; margin-bottom: 24px;">
-        Hämtar kanallistor från <span style="color: var(--primary); font-family: monospace;">cf.sverige8k.pro</span>...
+        HÃ¤mtar kanallistor frÃ¥n <span style="color: var(--primary); font-family: monospace;">cf.sverige8k.pro</span>...
       </div>
       <button class="btn-header" style="font-size: 13px;" onclick="launchDemo()">
-        ▶ Eller starta offline demo direkt
+        â–¶ Eller starta offline demo direkt
       </button>
     </div>
   `;
@@ -330,7 +330,7 @@ async function loadXtreamAccount(account, updateModal = false) {
   const pass = (account.password || '').trim();
 
   if (!server || !user || !pass) {
-    throw new Error('Server URL, Användarnamn och Lösenord krävs.');
+    throw new Error('Server URL, AnvÃ¤ndarnamn och LÃ¶senord krÃ¤vs.');
   }
 
   if (updateModal) showModalStatus('Ansluter till Sverige 8K...', false, true);
@@ -344,7 +344,7 @@ async function loadXtreamAccount(account, updateModal = false) {
   }
 
   if (authData?.user_info && String(authData.user_info.auth) === '0') {
-    throw new Error('Inloggningen nekades av servern (felaktigt användarnamn eller lösenord).');
+    throw new Error('Inloggningen nekades av servern (felaktigt anvÃ¤ndarnamn eller lÃ¶senord).');
   }
 
   const status = authData?.user_info?.status || 'Aktiv';
@@ -356,7 +356,7 @@ async function loadXtreamAccount(account, updateModal = false) {
     }
   }
 
-  if (updateModal) showModalStatus('Inloggad! Hämtar kategorier...', false, true);
+  if (updateModal) showModalStatus('Inloggad! HÃ¤mtar kategorier...', false, true);
 
   // 2. Fetch categories for Live, VOD, and Series in parallel (tiny ~150KB total)
   const [liveCatsRaw, vodCatsRaw, seriesCatsRaw] = await Promise.all([
@@ -412,7 +412,7 @@ async function loadXtreamAccount(account, updateModal = false) {
     url: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
     rawUrl: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.ts`,
     categoryId: String(s.category_id || defaultLiveCat.id),
-    epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'Livesändning'
+    epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'LivesÃ¤ndning'
   }));
 
   state.movies = (Array.isArray(vodStreams) ? vodStreams : []).map(m => ({
@@ -424,7 +424,7 @@ async function loadXtreamAccount(account, updateModal = false) {
     categoryId: String(m.category_id || defaultVodCat.id),
     rating: m.rating || '8.2',
     year: m.year || '2026',
-    plot: m.plot || 'Svensk film i hög kvalitet.'
+    plot: m.plot || 'Svensk film i hÃ¶g kvalitet.'
   }));
 
   state.series = (Array.isArray(seriesList) ? seriesList : []).map(s => ({
@@ -484,7 +484,7 @@ async function handleXtreamSubmit(e) {
   const pass = (passInput ? passInput.value : state.activeAccount?.password || '').trim();
 
   if (!server || !user || !pass) {
-    showModalStatus('Vänligen fyll i Server URL, Användarnamn och Lösenord.', true, false);
+    showModalStatus('VÃ¤nligen fyll i Server URL, AnvÃ¤ndarnamn och LÃ¶senord.', true, false);
     return;
   }
 
@@ -517,7 +517,7 @@ async function handleM3USubmit(e) {
 
     // Option 1: File Upload (Fastest, zero network)
     if (fileInput.files && fileInput.files.length > 0) {
-      showModalStatus('LÃ¤ser in fil frÃ¥n enheten...', false, true);
+      showModalStatus('LÃƒÂ¤ser in fil frÃƒÂ¥n enheten...', false, true);
       const file = fileInput.files[0];
       content = await file.text();
     }
@@ -531,7 +531,7 @@ async function handleM3USubmit(e) {
       showModalStatus('Laddar ner M3U-spellista via proxy...', false, true);
       content = await robustFetch(url, false);
     } else {
-      throw new Error('Ange en M3U-URL, vÃ¤lj en fil eller klistra in text.');
+      throw new Error('Ange en M3U-URL, vÃƒÂ¤lj en fil eller klistra in text.');
     }
 
     showModalStatus('Analyserar kanaler...', false, true);
@@ -543,7 +543,7 @@ async function handleM3USubmit(e) {
       renderCurrentTab();
     }, 600);
   } catch (err) {
-    showModalStatus('Kunde inte lÃ¤sa spellistan: ' + err.message, true, false);
+    showModalStatus('Kunde inte lÃƒÂ¤sa spellistan: ' + err.message, true, false);
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
@@ -551,7 +551,7 @@ async function handleM3USubmit(e) {
 
 // Robust M3U Parser
 function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
-  if (!content) throw new Error('Spellistan Ã¤r tom.');
+  if (!content) throw new Error('Spellistan ÃƒÂ¤r tom.');
 
   content = content.replace(/^\uFEFF/, '').trim();
   const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
@@ -559,7 +559,7 @@ function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
   const catMap = {};
   let currentName = '';
   let currentLogo = '';
-  let currentGroup = 'AllmÃ¤n';
+  let currentGroup = 'AllmÃƒÂ¤n';
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim();
@@ -567,7 +567,7 @@ function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
 
     if (line.startsWith('#EXTINF:')) {
       const groupMatch = line.match(/group-title=["']?([^"',]+)["']?/i);
-      currentGroup = groupMatch && groupMatch[1].trim() ? groupMatch[1].trim() : 'AllmÃ¤n';
+      currentGroup = groupMatch && groupMatch[1].trim() ? groupMatch[1].trim() : 'AllmÃƒÂ¤n';
 
       const logoMatch = line.match(/tvg-logo=["']?([^"'\s,]+)["']?/i);
       currentLogo = logoMatch && logoMatch[1].trim() ? logoMatch[1].trim() : '';
@@ -585,17 +585,17 @@ function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
         logo: currentLogo,
         url: line,
         categoryId: catId,
-        epg: 'LivesÃ¤ndning'
+        epg: 'LivesÃƒÂ¤ndning'
       });
 
       currentName = '';
       currentLogo = '';
-      currentGroup = 'AllmÃ¤n';
+      currentGroup = 'AllmÃƒÂ¤n';
     }
   }
 
   if (channels.length === 0) {
-    throw new Error('Hittade inga giltiga strÃ¶mmar i M3U-filen. Kontrollera formatet.');
+    throw new Error('Hittade inga giltiga strÃƒÂ¶mmar i M3U-filen. Kontrollera formatet.');
   }
 
   const account = {
@@ -604,7 +604,7 @@ function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
     type: 'm3u',
     url: sourceUrl,
     status: 'Aktiv',
-    expDate: 'ObegrÃ¤nsad'
+    expDate: 'ObegrÃƒÂ¤nsad'
   };
 
   state.accounts = state.accounts.filter(a => a.id !== account.id);
@@ -649,9 +649,9 @@ function playMedia(item) {
   document.getElementById('hud-channel-name').textContent = item.name;
   const subEl = document.getElementById('hud-channel-sub');
   subEl.innerHTML = `
-    <span>${item.epg || item.plot || 'Direktsändning'}</span>
+    <span>${item.epg || item.plot || 'DirektsÃ¤ndning'}</span>
     <a href="${vlcCallback}" style="display: inline-block; margin-left: 10px; background: rgba(255,149,0,0.3); border: 1px solid #FF9500; color: #FF9500; padding: 2px 8px; border-radius: 99px; font-size: 11px; text-decoration: none; font-weight: 700;">
-      📡 Öppna i VLC
+      ðŸ“¡ Ã–ppna i VLC
     </a>
   `;
 
@@ -664,9 +664,9 @@ function playMedia(item) {
   // Video error handler for Safari HTTP redirect / MKV codec blocks
   videoEl.onerror = () => {
     subEl.innerHTML = `
-      <span style="color: #FF375F; font-weight: 700;">⚠️ Safari stöder ej formatet/HTTP.</span>
+      <span style="color: #FF375F; font-weight: 700;">âš ï¸ Safari stÃ¶der ej formatet/HTTP.</span>
       <a href="${vlcCallback}" style="display: inline-block; margin-left: 6px; background: #FF9500; color: #000; padding: 4px 10px; border-radius: 99px; font-size: 12px; text-decoration: none; font-weight: 800;">
-        ▶ Klicka här för att spela i VLC
+        â–¶ Klicka hÃ¤r fÃ¶r att spela i VLC
       </a>
     `;
   };
@@ -705,10 +705,10 @@ function expandPlayer() {
 function togglePlay() {
   if (videoEl.paused) {
     videoEl.play();
-    document.getElementById('btn-play-pause').innerHTML = 'â¸';
+    document.getElementById('btn-play-pause').innerHTML = 'Ã¢ÂÂ¸';
   } else {
     videoEl.pause();
-    document.getElementById('btn-play-pause').innerHTML = 'â–¶';
+    document.getElementById('btn-play-pause').innerHTML = 'Ã¢â€“Â¶';
   }
 }
 
@@ -729,7 +729,7 @@ function toggleAirPlay() {
   if (window.WebKitPlaybackTargetAvailabilityEvent) {
     videoEl.webkitShowPlaybackTargetPicker();
   } else {
-    alert('AirPlay Ã¤r tillgÃ¤ngligt via iOS Kontrollcenter.');
+    alert('AirPlay ÃƒÂ¤r tillgÃƒÂ¤ngligt via iOS Kontrollcenter.');
   }
 }
 
@@ -758,7 +758,7 @@ function switchTab(tab) {
 
 function renderCurrentTab() {
   const contentEl = document.getElementById('tab-content');
-  document.getElementById('brand-account').textContent = state.activeAccount?.name || 'Demo-lÃ¤ge';
+  document.getElementById('brand-account').textContent = state.activeAccount?.name || 'Demo-lÃƒÂ¤ge';
 
   if (state.currentTab === 'home') {
     renderHome(contentEl);
@@ -783,11 +783,11 @@ function renderHome(container) {
     <!-- Hero Banner -->
     ${hero ? `
       <div class="hero-card">
-        <div class="hero-tag">ðŸ”¥ Utvalt Just Nu</div>
+        <div class="hero-tag">Ã°Å¸â€Â¥ Utvalt Just Nu</div>
         <div class="hero-title">${hero.name}</div>
-        <div class="hero-desc">${hero.plot || hero.epg || 'Se direktsÃ¤nd TV och VOD i hÃ¶gsta kvalitet.'}</div>
+        <div class="hero-desc">${hero.plot || hero.epg || 'Se direktsÃƒÂ¤nd TV och VOD i hÃƒÂ¶gsta kvalitet.'}</div>
         <button class="btn-play-hero" onclick="playMedia(state.movies[0] || state.channels[0])">
-          â–¶ Spela Nu
+          Ã¢â€“Â¶ Spela Nu
         </button>
       </div>
     ` : ''}
@@ -795,21 +795,21 @@ function renderHome(container) {
     <!-- Shortcuts -->
     <div class="shortcuts-grid">
       <div class="shortcut-card shortcut-live" onclick="switchTab('live')">
-        <div class="icon">ðŸ“º</div>
+        <div class="icon">Ã°Å¸â€œÂº</div>
         <div>
           <div class="label">Live TV</div>
           <div class="count">${state.channels.length} kanaler</div>
         </div>
       </div>
       <div class="shortcut-card shortcut-movies" onclick="switchTab('movies')">
-        <div class="icon">ðŸŽ¬</div>
+        <div class="icon">Ã°Å¸Å½Â¬</div>
         <div>
           <div class="label">Filmer</div>
           <div class="count">${state.movies.length} st</div>
         </div>
       </div>
       <div class="shortcut-card shortcut-favs" onclick="state.showFavoritesOnly = true; switchTab('live');">
-        <div class="icon">â­</div>
+        <div class="icon">Ã¢Â­Â</div>
         <div>
           <div class="label">Favoriter</div>
           <div class="count">${state.favorites.size} st</div>
@@ -829,7 +829,7 @@ function renderHome(container) {
 
     <!-- Popular Channels -->
     <div class="section-header">
-      <div class="section-title">PopulÃ¤ra Kanaler</div>
+      <div class="section-title">PopulÃƒÂ¤ra Kanaler</div>
       <div style="font-size: 13px; color: var(--primary); font-weight: 700; cursor: pointer;" onclick="switchTab('live')">Visa alla</div>
     </div>
     <div class="h-scroll">
@@ -846,10 +846,11 @@ function renderHome(container) {
         <div class="movie-poster-card" onclick="openMovieModal('${m.id}')">
           <div class="movie-poster-box">
             ${m.poster ? `<img src="${m.poster}" class="movie-poster-img" alt="${m.name}" onerror="this.style.display='none'">` : ''}
-            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">ðŸŽ¬</span>
-            ${m.rating ? `<div class="movie-rating-badge">â˜… ${m.rating}</div>` : ''}
+            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">Ã°Å¸Å½Â¬</span>
+            ${m.rating ? `<div class="movie-rating-badge">Ã¢Ëœâ€¦ ${m.rating}</div>` : ''}
           </div>
           <div class="movie-title">${m.name}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;"><span style="font-size:11px; color:var(--text-dim);">${m.year || '2026'}</span><a href="vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(m.url)}" class="btn-vlc-pill" style="font-size:10px; padding:2px 8px;">▶ VLC</a></div>
         </div>
       `).join('')}
     </div>
@@ -862,10 +863,10 @@ function renderChannelPill(ch) {
       <div class="channel-screen-box">
         <div class="channel-live-dot"><span style="width: 4px; height: 4px; border-radius: 50%; background: #fff;"></span> LIVE</div>
         ${ch.logo ? `<img src="${ch.logo}" class="channel-logo-img" alt="${ch.name}" onerror="this.style.display='none'">` : ''}
-        <span style="font-size: 26px; color: var(--primary);">ðŸ“º</span>
+        <span style="font-size: 26px; color: var(--primary);">Ã°Å¸â€œÂº</span>
       </div>
       <div class="channel-title">${ch.name}</div>
-      <div class="channel-epg">${ch.epg || 'LivesÃ¤ndning'}</div>
+      <div class="channel-epg">${ch.epg || 'LivesÃƒÂ¤ndning'}</div>
     </div>
   `;
 }
@@ -903,7 +904,7 @@ async function selectLiveCategory(catId) {
           logo: s.stream_icon,
           url: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
           categoryId: String(s.category_id || catId),
-          epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'Livesändning'
+          epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'LivesÃ¤ndning'
         }));
         state.categoryChannelsCache[catId] = channels;
         state.channels = channels;
@@ -934,9 +935,9 @@ function renderLiveTV(container) {
   container.innerHTML = `
     <!-- Search Bar -->
     <div class="search-box">
-      <span>🔍</span>
-      <input type="text" class="search-input" placeholder="Sök bland ${state.channels.length} kanaler..." value="${state.searchQuery}" oninput="state.searchQuery = this.value; state.channelPage = 1; renderLiveTV(document.getElementById('tab-content'))">
-      <span style="cursor: pointer; color: ${state.showFavoritesOnly ? '#FFD60A' : 'var(--text-dim)'}; font-size: 18px;" onclick="state.showFavoritesOnly = !state.showFavoritesOnly; state.channelPage = 1; renderLiveTV(document.getElementById('tab-content'))">★</span>
+      <span>ðŸ”</span>
+      <input type="text" class="search-input" placeholder="SÃ¶k bland ${state.channels.length} kanaler..." value="${state.searchQuery}" oninput="state.searchQuery = this.value; state.channelPage = 1; renderLiveTV(document.getElementById('tab-content'))">
+      <span style="cursor: pointer; color: ${state.showFavoritesOnly ? '#FFD60A' : 'var(--text-dim)'}; font-size: 18px;" onclick="state.showFavoritesOnly = !state.showFavoritesOnly; state.channelPage = 1; renderLiveTV(document.getElementById('tab-content'))">â˜…</span>
     </div>
 
     <!-- Category Pills -->
@@ -952,24 +953,25 @@ function renderLiveTV(container) {
     <div style="padding-top: 8px;">
       ${filtered.length === 0 ? `
         <div style="text-align: center; padding: 50px 20px; color: var(--text-dim);">
-          <div style="font-size: 40px; margin-bottom: 12px;">📺</div>
-          <div>Inga kanaler matchade sökningen.</div>
+          <div style="font-size: 40px; margin-bottom: 12px;">ðŸ“º</div>
+          <div>Inga kanaler matchade sÃ¶kningen.</div>
         </div>
       ` : `
         ${displayed.map(ch => `
           <div class="channel-list-item">
             <div class="channel-logo-circle" onclick="playMedia(state.channels.find(c => c.id === '${ch.id}'))">
               ${ch.logo ? `<img src="${ch.logo}" style="max-width: 80%; max-height: 80%; object-fit: contain;" alt="${ch.name}" onerror="this.style.display='none'">` : ''}
-              <span style="font-size: 20px; color: var(--primary);">📺</span>
+              <span style="font-size: 20px; color: var(--primary);">ðŸ“º</span>
             </div>
             <div class="channel-details" onclick="playMedia(state.channels.find(c => c.id === '${ch.id}'))">
               <div class="channel-name">${ch.name}</div>
               <div class="channel-meta">
-                <span style="color: #FF375F; font-size: 10px;">●</span>
-                <span>${ch.epg || 'Livesändning'}</span>
+                <span style="color: #FF375F; font-size: 10px;">â—</span>
+                <span>${ch.epg || 'LivesÃ¤ndning'}</span>
               </div>
             </div>
-            <button class="star-btn ${state.favorites.has(ch.id) ? 'active' : ''}" onclick="toggleFavorite('${ch.id}')">★</button>
+            <a href="vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(ch.url)}" class="btn-vlc-pill" title="Spela i VLC">▶ VLC</a>
+            <button class="star-btn ${state.favorites.has(ch.id) ? 'active' : ''}" onclick="toggleFavorite('${ch.id}')">â˜…</button>
           </div>
         `).join('')}
         ${hasMore ? `
@@ -1011,7 +1013,7 @@ async function selectMovieCategory(catId) {
           categoryId: String(m.category_id || catId),
           rating: m.rating || '8.0',
           year: m.year || '2026',
-          plot: m.plot || 'Svensk film i hög kvalitet.'
+          plot: m.plot || 'Svensk film i hÃ¶g kvalitet.'
         }));
         state.categoryMoviesCache[catId] = state.movies;
       }
@@ -1077,8 +1079,8 @@ function renderMovies(container) {
         <div class="movie-poster-card" onclick="openMovieModal('${m.id}')">
           <div class="movie-poster-box" style="width: 100%; height: 160px;">
             ${m.poster ? `<img src="${m.poster}" class="movie-poster-img" alt="${m.name}" onerror="this.style.display='none'">` : ''}
-            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">ðŸŽ¬</span>
-            ${m.rating ? `<div class="movie-rating-badge">â˜… ${m.rating}</div>` : ''}
+            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">Ã°Å¸Å½Â¬</span>
+            ${m.rating ? `<div class="movie-rating-badge">Ã¢Ëœâ€¦ ${m.rating}</div>` : ''}
           </div>
           <div class="movie-title">${m.name}</div>
           <div style="font-size: 11px; color: var(--text-dim);">${m.year || ''}</div>
@@ -1096,11 +1098,12 @@ function renderSeries(container) {
         <div class="movie-poster-card" onclick="openSeriesModal('${s.id}')">
           <div class="movie-poster-box" style="width: 100%; height: 160px;">
             ${s.poster ? `<img src="${s.poster}" class="movie-poster-img" alt="${s.name}" onerror="this.style.display='none'">` : ''}
-            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">ðŸ“º</span>
-            ${s.rating ? `<div class="movie-rating-badge">â˜… ${s.rating}</div>` : ''}
+            <span style="font-size: 32px; color: rgba(255,255,255,0.2);">Ã°Å¸â€œÂº</span>
+            ${s.rating ? `<div class="movie-rating-badge">Ã¢Ëœâ€¦ ${s.rating}</div>` : ''}
           </div>
           <div class="movie-title">${s.name}</div>
-          <div style="font-size: 11px; color: var(--text-dim);">${s.seasons} SÃ¤songer</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;"><span style="font-size:11px; color:var(--text-dim);">${s.seasons} Säsonger</span><a href="vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent('https://cf.sverige8k.pro/series/b16836b7a227/fca112cc11/' + s.seriesId + '.mp4')}" class="btn-vlc-pill" style="font-size:10px; padding:2px 8px;">▶ VLC</a></div>
+          <div style="font-size: 11px; color: var(--text-dim);">${s.seasons} SÃƒÂ¤songer</div>
         </div>
       `).join('')}
     </div>
@@ -1122,30 +1125,30 @@ function renderSettings(container) {
         </div>
         <div style="font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-glass); padding-top: 10px; display: flex; justify-content: space-between;">
           <span>Status: <strong style="color: #30D158;">${state.activeAccount?.status || 'Aktiv'}</strong></span>
-          <span>Giltigt: ${state.activeAccount?.expDate || 'ObegrÃ¤nsad'}</span>
+          <span>Giltigt: ${state.activeAccount?.expDate || 'ObegrÃƒÂ¤nsad'}</span>
         </div>
       </div>
 
       <!-- Quick Actions -->
       <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
-        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">App-instÃ¤llningar</div>
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">App-instÃƒÂ¤llningar</div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-glass);">
           <span>Videomotor</span>
           <span style="color: var(--accent-cyan); font-weight: 600; font-size: 13px;">Apple HLS / Hls.js</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
-          <span>HÃ¥rdvaruavkodning</span>
+          <span>HÃƒÂ¥rdvaruavkodning</span>
           <span style="color: #30D158; font-weight: 600; font-size: 13px;">Aktiv (Metal / WebKit)</span>
         </div>
       </div>
 
       <!-- Demo Launch -->
       <button class="btn-primary" style="margin-bottom: 16px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); box-shadow: none;" onclick="launchDemo()">
-        âœ¨ Ã…terstÃ¤ll till Demo-lÃ¤ge
+        Ã¢Å“Â¨ Ãƒâ€¦terstÃƒÂ¤ll till Demo-lÃƒÂ¤ge
       </button>
 
       <div style="text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 24px;">
-        IPTV Neo PWA v1.0.0<br>Optimerad fÃ¶r Safari iOS & Standalone HemskÃ¤rm
+        IPTV Neo PWA v1.0.0<br>Optimerad fÃƒÂ¶r Safari iOS & Standalone HemskÃƒÂ¤rm
       </div>
     </div>
   `;
@@ -1180,7 +1183,7 @@ function switchModalTab(tab) {
 function renderSavedAccounts() {
   const list = document.getElementById('saved-accounts-list');
   if (state.accounts.length === 0) {
-    list.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 20px;">Inga sparade konton Ã¤n.</div>`;
+    list.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 20px;">Inga sparade konton ÃƒÂ¤n.</div>`;
     return;
   }
   list.innerHTML = state.accounts.map(acc => `
@@ -1193,7 +1196,7 @@ function renderSavedAccounts() {
         <div style="font-size: 12px; color: var(--text-dim);">${acc.type === 'xtream' ? acc.serverUrl : 'M3U Spellista'}</div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button class="btn-header" onclick="activateAccount('${acc.id}')">VÃ¤lj</button>
+        <button class="btn-header" onclick="activateAccount('${acc.id}')">VÃƒÂ¤lj</button>
         <button class="btn-header" style="color: #FF375F;" onclick="deleteAccount('${acc.id}')">Ta bort</button>
       </div>
     </div>
@@ -1235,12 +1238,12 @@ function openMovieModal(id) {
         ${mov.poster ? `<img src="${mov.poster}" style="width: 100%; height: 100%; object-fit: cover;">` : ''}
       </div>
       <div style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">${mov.name}</div>
-      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">${mov.year || ''} â€¢ Betyg: â˜… ${mov.rating || 'N/A'}</div>
-      <div style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 24px;">${mov.plot || 'Ingen sammanfattning tillgÃ¤nglig.'}</div>
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">${mov.year || ''} Ã¢â‚¬Â¢ Betyg: Ã¢Ëœâ€¦ ${mov.rating || 'N/A'}</div>
+      <div style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 24px;">${mov.plot || 'Ingen sammanfattning tillgÃƒÂ¤nglig.'}</div>
       <button class="btn-primary" onclick="closeModal(); playMedia(state.movies.find(m => m.id === '${mov.id}'))">
-        â–¶ Spela Film Nu
+        Ã¢â€“Â¶ Spela Film Nu
       </button>
-      <button class="btn-header" style="margin: 12px auto 0 auto;" onclick="closeModal()">StÃ¤ng</button>
+      <button class="btn-header" style="margin: 12px auto 0 auto;" onclick="closeModal()">StÃƒÂ¤ng</button>
     </div>
   `;
   modal.style.display = 'flex';
@@ -1253,17 +1256,17 @@ function openSeriesModal(id) {
   modal.querySelector('.modal-content').innerHTML = `
     <div style="text-align: center; margin-bottom: 20px;">
       <div style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">${ser.name}</div>
-      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Betyg: â˜… ${ser.rating} â€¢ ${ser.seasons} SÃ¤songer</div>
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Betyg: Ã¢Ëœâ€¦ ${ser.rating} Ã¢â‚¬Â¢ ${ser.seasons} SÃƒÂ¤songer</div>
       <div style="text-align: left; margin-top: 20px;">
-        <div style="font-size: 15px; font-weight: 800; margin-bottom: 10px;">Avsnitt (SÃ¤song 1)</div>
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 10px;">Avsnitt (SÃƒÂ¤song 1)</div>
         ${[1, 2, 3, 4, 5].map(ep => `
           <div class="drawer-item" style="margin-bottom: 8px; justify-content: space-between;" onclick="closeModal(); playMedia({ name: '${ser.name} S01E0${ep}', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', epg: 'Avsnitt ${ep}' })">
             <span>Avsnitt ${ep}</span>
-            <span style="color: var(--primary);">â–¶ Spela</span>
+            <span style="color: var(--primary);">Ã¢â€“Â¶ Spela</span>
           </div>
         `).join('')}
       </div>
-      <button class="btn-header" style="margin: 20px auto 0 auto;" onclick="closeModal()">StÃ¤ng</button>
+      <button class="btn-header" style="margin: 20px auto 0 auto;" onclick="closeModal()">StÃƒÂ¤ng</button>
     </div>
   `;
   modal.style.display = 'flex';
@@ -1311,7 +1314,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (banner) {
       const alertDiv = document.createElement('div');
       alertDiv.style.cssText = 'background: rgba(255,55,95,0.2); border: 1px solid #FF375F; color: #FF6987; padding: 12px; border-radius: 12px; margin: 12px; font-size: 13px; font-weight: 600; text-align: center;';
-      alertDiv.innerHTML = '⚠️ Kunde inte ansluta till servern: ' + err.message + '. Kontrollera nätverket eller klicka på "Byt konto".';
+      alertDiv.innerHTML = 'âš ï¸ Kunde inte ansluta till servern: ' + err.message + '. Kontrollera nÃ¤tverket eller klicka pÃ¥ "Byt konto".';
       banner.insertBefore(alertDiv, banner.firstChild);
     }
   }
