@@ -835,6 +835,53 @@ function renderChannelPill(ch) {
   `;
 }
 
+
+async function selectLiveCategory(catId) {
+  state.selectedLiveCategory = catId;
+  state.channelPage = 1;
+
+  // Check cache
+  if (state.categoryChannelsCache && state.categoryChannelsCache[catId]) {
+    state.channels = state.categoryChannelsCache[catId];
+    renderLiveTV(document.getElementById('tab-content'));
+    return;
+  }
+
+  // If "all" or category not cached, fetch on demand
+  if (state.activeAccount && state.activeAccount.type === 'xtream') {
+    const server = cleanServerUrl(state.activeAccount.serverUrl);
+    const user = state.activeAccount.username;
+    const pass = state.activeAccount.password;
+    const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+    const targetUrl = catId !== 'all' 
+      ? `${base}&action=get_live_streams&category_id=${catId}`
+      : `${base}&action=get_live_streams&category_id=48`;
+
+    renderLiveTV(document.getElementById('tab-content'));
+    try {
+      const streams = await robustFetch(targetUrl, true);
+      if (Array.isArray(streams) && streams.length > 0) {
+        const channels = streams.map(s => ({
+          id: `xtream_${s.stream_id}`,
+          streamId: s.stream_id,
+          name: s.name,
+          logo: s.stream_icon,
+          url: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
+          categoryId: String(s.category_id || catId),
+          epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'Livesändning'
+        }));
+        state.categoryChannelsCache[catId] = channels;
+        state.channels = channels;
+      }
+    } catch (e) {
+      console.warn('Category fetch error:', e);
+    }
+    renderLiveTV(document.getElementById('tab-content'));
+  } else {
+    renderLiveTV(document.getElementById('tab-content'));
+  }
+}
+
 // 2. Live TV View
 function renderLiveTV(container) {
   const filtered = state.channels.filter(ch => {
@@ -860,7 +907,7 @@ function renderLiveTV(container) {
     <!-- Category Pills -->
     <div class="filter-bar">
       ${state.liveCategories.map(cat => `
-        <button class="filter-pill ${state.selectedLiveCategory === cat.id ? 'active' : ''}" onclick="state.selectedLiveCategory = '${cat.id}'; state.channelPage = 1; renderLiveTV(document.getElementById('tab-content'))">
+        <button class="filter-pill ${state.selectedLiveCategory === cat.id ? 'active' : ''}" onclick="selectLiveCategory('${cat.id}')">
           ${cat.name}
         </button>
       `).join('')}
