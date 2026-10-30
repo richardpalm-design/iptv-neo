@@ -7,6 +7,9 @@ on:
       - main
       - master
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Unsigned IPA
@@ -59,3 +62,19 @@ jobs:
           name: IPTVNeo-ipa
           path: IPTVNeo.ipa
           retention-days: 14
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "IPTV Neo Latest Build"
+          body: |
+            ## IPTV Neo iOS Native IPA
+            - Förinstallerat Sverige 8K IPTV-konto.
+            - Startsida-knapp och infälld navigation.
+            - Native AVPlayer & Picture-in-Picture & AirPlay.
+            - Installera via **Sideloadly**, **SideStore**, **AltStore** eller **TrollStore**.
+          files: IPTVNeo.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

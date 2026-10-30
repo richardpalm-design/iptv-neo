@@ -15,7 +15,7 @@
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="./css/app.css?v=3.2">
+  <link rel="stylesheet" href="./css/app.css?v=4.0">
   
   <!-- HLS Fallback for non-Safari browsers -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
@@ -49,32 +49,32 @@
       <div class="mini-indicator"></div>
       <div class="mini-info">
         <div id="mini-title" class="mini-title">Spelar...</div>
-        <div id="mini-sub" class="mini-sub">LivesÃ¤ndning</div>
+        <div id="mini-sub" class="mini-sub">Livesändning</div>
       </div>
-      <span style="font-size: 16px; color: var(--primary);">â–²</span>
+      <span style="font-size: 16px; color: var(--primary);">▲</span>
     </div>
 
     <!-- Frosted Bottom Navigation Bar -->
     <nav class="bottom-nav">
       <div class="nav-item active" data-tab="home" onclick="switchTab('home')">
-        <span class="nav-icon">ðŸ </span>
+        <span class="nav-icon">🏠</span>
         <span>Hem</span>
       </div>
       <div class="nav-item" data-tab="live" onclick="switchTab('live')">
-        <span class="nav-icon">ðŸ“º</span>
+        <span class="nav-icon">📺</span>
         <span>Live TV</span>
       </div>
       <div class="nav-item" data-tab="movies" onclick="switchTab('movies')">
-        <span class="nav-icon">ðŸŽ¬</span>
+        <span class="nav-icon">🎬</span>
         <span>Filmer</span>
       </div>
       <div class="nav-item" data-tab="series" onclick="switchTab('series')">
-        <span class="nav-icon">ðŸŽžï¸</span>
+        <span class="nav-icon">🎞️</span>
         <span>Serier</span>
       </div>
       <div class="nav-item" data-tab="settings" onclick="switchTab('settings')">
-        <span class="nav-icon">âš™ï¸</span>
-        <span>InstÃ¤llningar</span>
+        <span class="nav-icon">⚙️</span>
+        <span>Inställningar</span>
       </div>
     </nav>
   </div>
@@ -90,16 +90,17 @@
           <button class="btn-header" style="background: rgba(0,0,0,0.6); padding: 8px 14px; font-weight: 800; font-size: 13px;" onclick="minimizePlayer()">‹ Tillbaka</button>
           <div class="hud-channel-info">
             <div id="hud-channel-name" class="hud-channel-name">Kanalnamn</div>
-            <div id="hud-channel-sub" class="hud-channel-sub">LivesÃ¤ndning</div>
+            <div id="hud-channel-sub" class="hud-channel-sub">Livesändning</div>
           </div>
-          <button class="hud-btn" onclick="toggleChannelDrawer()">ðŸ“º</button>
+          <button class="hud-btn" onclick="toggleChannelDrawer()">📺</button>
         </div>
 
         <div class="hud-bottom">
-          <button id="btn-play-pause" class="hud-btn" onclick="togglePlay()">â¸</button>
+          <button id="btn-play-pause" class="hud-btn" onclick="togglePlay()">⏸</button>
+          <div id="hud-vlc-anchor" style="margin-left: 8px;"></div>
           <div style="flex: 1;"></div>
-          <button class="hud-btn" title="Bild-i-bild" onclick="togglePiP()">ðŸ—”</button>
-          <button class="hud-btn" title="AirPlay" onclick="toggleAirPlay()">ðŸ“¡</button>
+          <button class="hud-btn" title="Bild-i-bild" onclick="togglePiP()">🔲</button>
+          <button class="hud-btn" title="AirPlay" onclick="toggleAirPlay()">📡</button>
         </div>
       </div>
 
@@ -107,7 +108,7 @@
       <div id="player-drawer" class="player-drawer">
         <div class="drawer-header">
           <div style="font-weight: 800; font-size: 16px;">Snabbyte kanaler</div>
-          <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="toggleChannelDrawer()">âœ•</button>
+          <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="toggleChannelDrawer()">✕</button>
         </div>
         <div id="drawer-channels-list" class="drawer-list"></div>
       </div>
@@ -119,14 +120,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <div style="font-size: 18px; font-weight: 800;">Hantera Konton</div>
-        <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="closeModal()">âœ•</button>
+        <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="closeModal()">✕</button>
       </div>
 
       <!-- 1-Click Demo Launcher -->
       <div class="hero-card" style="margin: 0 0 20px 0; border-color: var(--accent-cyan);">
-        <div style="font-weight: 800; font-size: 16px; margin-bottom: 4px;">ðŸš€ Vill du prova direkt?</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Starta demo-lÃ¤ge med nordiska kanaler (SVT, TV4, Viasat Sport) och VOD-filmer.</div>
-        <button class="btn-play-hero" onclick="launchDemo()">â–¶ Starta Demo Nu</button>
+        <div style="font-weight: 800; font-size: 16px; margin-bottom: 4px;">🚀 Vill du prova direkt?</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Starta demo-läge med nordiska kanaler (SVT, TV4, Viasat Sport) och VOD-filmer.</div>
+        <button class="btn-play-hero" onclick="launchDemo()">▶ Starta Demo Nu</button>
       </div>
 
       <!-- Tab Switcher inside Modal -->
@@ -152,12 +153,12 @@
             <input id="xtream-server" class="form-input" placeholder="http://cf.sverige8k.pro" value="http://cf.sverige8k.pro" required>
           </div>
           <div class="form-group">
-            <label class="form-label">AnvÃ¤ndarnamn</label>
-            <input id="xtream-user" class="form-input" placeholder="AnvÃ¤ndarnamn" value="b16836b7a227" required>
+            <label class="form-label">Användarnamn</label>
+            <input id="xtream-user" class="form-input" placeholder="Användarnamn" value="b16836b7a227" required>
           </div>
           <div class="form-group">
-            <label class="form-label">LÃ¶senord</label>
-            <input id="xtream-pass" type="password" class="form-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value="fca112cc11" required>
+            <label class="form-label">Lösenord</label>
+            <input id="xtream-pass" type="password" class="form-input" placeholder="••••••••" value="fca112cc11" required>
           </div>
           <button id="btn-xtream-submit" type="submit" class="btn-primary">Anslut & Spara</button>
         </form>
@@ -165,11 +166,11 @@
 
       <!-- Form 2: M3U Playlist Form (URL, File, or Paste) -->
       <div id="modal-sec-m3u" style="display: none; background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
-        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">LÃ¤gg till M3U-spellista</div>
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Lägg till M3U-spellista</div>
         
         <form onsubmit="handleM3USubmit(event)">
           <div class="form-group">
-            <label class="form-label">Namn pÃ¥ spellista</label>
+            <label class="form-label">Namn på spellista</label>
             <input id="m3u-name" class="form-input" placeholder="Min M3U" value="Min M3U" required>
           </div>
           <div class="form-group">
@@ -177,7 +178,7 @@
             <input id="m3u-url" class="form-input" placeholder="http://.../playlist.m3u">
           </div>
           <div class="form-group">
-            <label class="form-label">Alternativ 2: VÃ¤lj M3U-fil frÃ¥n enheten</label>
+            <label class="form-label">Alternativ 2: Välj M3U-fil från enheten</label>
             <input id="m3u-file" type="file" accept=".m3u,.m3u8,.txt" class="form-input" style="padding: 8px;">
           </div>
           <div class="form-group">
@@ -201,6 +202,6 @@
   </div>
 
   <!-- Application Script -->
-  <script src="./js/app.js?v=3.2"></script>
+  <script src="./js/app.js?v=4.0"></script>
 </body>
 </html>
