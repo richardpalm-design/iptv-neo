@@ -7,10 +7,10 @@ struct AccountModalView: View {
     @State private var selectedTab: Int = 0 // 0 = Xtream, 1 = M3U, 2 = Manage
     
     // Xtream Fields
-    @State private var serverUrl: String = ""
-    @State private var username: String = ""
-    @State private var password: String = ""
-    @State private var accountName: String = ""
+    @State private var serverUrl: String = "http://cf.sverige8k.pro"
+    @State private var username: String = "b16836b7a227"
+    @State private var password: String = "fca112cc11"
+    @State private var accountName: String = "Sverige 8K"
     
     // M3U Fields
     @State private var m3uName: String = ""

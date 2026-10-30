@@ -50,8 +50,13 @@ class AppState: ObservableObject {
             StorageService.shared.setActiveAccountId(first.id)
             loadContent(for: first)
         } else {
-            // First run: load Demo mode seamlessly
-            launchDemo()
+            // First run: auto configure default Sverige 8K account
+            let defaultAcc = DemoData.defaultSverigeAccount
+            self.accounts = [defaultAcc]
+            self.activeAccount = defaultAcc
+            StorageService.shared.saveAccounts([defaultAcc])
+            StorageService.shared.setActiveAccountId(defaultAcc.id)
+            loadContent(for: defaultAcc)
         }
     }
     

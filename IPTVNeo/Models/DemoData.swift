@@ -1,6 +1,17 @@
 import Foundation
 
 struct DemoData {
+    static let defaultSverigeAccount = IPTVAccount(
+        id: "sverige8k-default",
+        name: "Sverige 8K",
+        type: .xtream,
+        serverUrl: "http://cf.sverige8k.pro",
+        username: "b16836b7a227",
+        password: "fca112cc11",
+        status: "Active",
+        expDate: "2027-01-20"
+    )
+
     static let demoAccount = IPTVAccount(
         id: "demo-account",
         name: "IPTV Neo Demo (Nordic & World)",

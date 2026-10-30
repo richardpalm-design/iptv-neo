@@ -571,6 +571,10 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .mini-indicator {
   width: 8px;
   height: 8px;
