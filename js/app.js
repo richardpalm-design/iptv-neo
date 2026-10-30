@@ -184,14 +184,16 @@ const state = {
   channelPage: 1,
   movies: [],
   movieCategories: [],
-  selectedMovieCategory: 'all',
+  selectedMovieCategory: '167',
   moviesLoading: false,
   movieSearchQuery: '',
+  moviePage: 1,
   series: [],
   seriesCategories: [],
-  selectedSeriesCategory: 'all',
+  selectedSeriesCategory: '138',
   seriesLoading: false,
   seriesSearchQuery: '',
+  seriesPage: 1,
   favorites: new Set(JSON.parse(localStorage.getItem('iptv_neo_favorites') || '[]')),
   searchQuery: '',
   showFavoritesOnly: false,
@@ -323,7 +325,7 @@ function renderLoadingHome(message = 'Ansluter till Sverige 8K...') {
       <div style="width: 52px; height: 52px; border: 3px solid rgba(10,132,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 24px;"></div>
       <div style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">${message}</div>
       <div style="font-size: 13px; color: var(--text-muted); max-width: 340px; line-height: 1.5; margin-bottom: 24px;">
-        Hämtar kanaler och underhållning från <span style="color: var(--primary); font-family: monospace;">cf.sverige8k.pro</span>...
+        Hämtar kanaler, filmer och serier från <span style="color: var(--primary); font-family: monospace;">cf.sverige8k.pro</span>...
       </div>
       <button class="btn-header" style="font-size: 13px;" onclick="launchDemo()">
         ▶ Eller starta offline demo direkt
@@ -332,7 +334,7 @@ function renderLoadingHome(message = 'Ansluter till Sverige 8K...') {
   `;
 }
 
-// Complete Xtream Loader: Live TV, VOD Movies & Series (Swedish Priority)
+// Complete Xtream Loader: Live TV, VOD Movies & Series (Natural Server Ordering, Unfiltered)
 async function loadXtreamAccount(account, updateModal = false) {
   const name = account.name || 'Sverige 8K';
   const server = cleanServerUrl(account.serverUrl);
@@ -368,36 +370,27 @@ async function loadXtreamAccount(account, updateModal = false) {
 
   if (updateModal) showModalStatus('Inloggad! Hämtar kategorier...', false, true);
 
-  // 2. Fetch categories for Live, VOD, and Series in parallel (~150KB)
+  // 2. Fetch categories for Live, VOD, and Series in parallel (Natural Server Ordering, Unfiltered)
   const [liveCatsRaw, vodCatsRaw, seriesCatsRaw] = await Promise.all([
     robustFetch(`${base}&action=get_live_categories`, true).catch(() => []),
     robustFetch(`${base}&action=get_vod_categories`, true).catch(() => []),
     robustFetch(`${base}&action=get_series_categories`, true).catch(() => [])
   ]);
 
-  // Helper to sort Swedish categories to the top
-  const sortSwedish = (arr) => {
-    return arr.map(c => ({ id: String(c.category_id), name: c.category_name })).sort((a, b) => {
-      const aSe = a.name.startsWith('SE|') || a.name.toLowerCase().includes('svensk') || a.name.toLowerCase().includes('sweden') || a.name.toLowerCase().includes('nordic');
-      const bSe = b.name.startsWith('SE|') || b.name.toLowerCase().includes('svensk') || b.name.toLowerCase().includes('sweden') || b.name.toLowerCase().includes('nordic');
-      if (aSe && !bSe) return -1;
-      if (!aSe && bSe) return 1;
-      return 0;
-    });
-  };
+  const mapCats = (arr) => Array.isArray(arr) ? arr.map(c => ({ id: String(c.category_id), name: c.category_name })) : [];
 
-  const liveCats = sortSwedish(Array.isArray(liveCatsRaw) ? liveCatsRaw : []);
-  const vodCats = sortSwedish(Array.isArray(vodCatsRaw) ? vodCatsRaw : []);
-  const seriesCats = sortSwedish(Array.isArray(seriesCatsRaw) ? seriesCatsRaw : []);
+  const liveCats = mapCats(liveCatsRaw);
+  const vodCats = mapCats(vodCatsRaw);
+  const seriesCats = mapCats(seriesCatsRaw);
 
   state.liveCategories = [{ id: 'all', name: 'Alla kanaler' }, ...liveCats];
-  state.movieCategories = [{ id: 'all', name: 'Alla filmer' }, ...vodCats];
-  state.seriesCategories = [{ id: 'all', name: 'Alla serier' }, ...seriesCats];
+  state.movieCategories = vodCats;
+  state.seriesCategories = seriesCats;
 
-  // Pick default Swedish category IDs
-  const defaultLiveCat = liveCats.find(c => c.name.startsWith('SE| SWEDEN') || c.id === '48') || liveCats[0] || { id: 'all' };
-  const defaultVodCat = vodCats.find(c => c.name.includes('SVENSKA') || c.id === '167') || vodCats[0] || { id: 'all' };
-  const defaultSeriesCat = seriesCats.find(c => c.name.includes('SVENSK') || c.id === '96') || seriesCats[0] || { id: 'all' };
+  // Pick initial default categories
+  const defaultLiveCat = liveCats.find(c => c.name.startsWith('SE|') || c.id === '48') || liveCats[0] || { id: 'all' };
+  const defaultVodCat = vodCats[0] || { id: '167', name: 'Filmer' };
+  const defaultSeriesCat = seriesCats.find(c => c.name.includes('NETFLIX')) || seriesCats[0] || { id: '138', name: 'Serier' };
 
   state.selectedLiveCategory = defaultLiveCat.id;
   state.selectedMovieCategory = defaultVodCat.id;
@@ -407,7 +400,7 @@ async function loadXtreamAccount(account, updateModal = false) {
   state.categoryMoviesCache = state.categoryMoviesCache || {};
   state.categorySeriesCache = state.categorySeriesCache || {};
 
-  // 3. Fetch Swedish Live Channels first for instant boot (~75KB)
+  // 3. Fetch Initial Live Channels (~75KB)
   try {
     const liveStreams = await robustFetch(`${base}&action=get_live_streams&category_id=${defaultLiveCat.id}`, true);
     state.channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
@@ -425,7 +418,7 @@ async function loadXtreamAccount(account, updateModal = false) {
     console.warn('Initial live fetch warning:', e);
   }
 
-  // 4. Fetch Swedish VOD Movies and Series in background so UI renders immediately
+  // 4. Fetch Initial VOD Movies and Series in background so UI renders immediately
   Promise.all([
     robustFetch(`${base}&action=get_vod_streams&category_id=${defaultVodCat.id}`, true).catch(() => []),
     robustFetch(`${base}&action=get_series&category_id=${defaultSeriesCat.id}`, true).catch(() => [])
@@ -439,7 +432,7 @@ async function loadXtreamAccount(account, updateModal = false) {
       categoryId: String(m.category_id || defaultVodCat.id),
       rating: m.rating || '8.2',
       year: m.year || '2026',
-      plot: m.plot || 'Svensk film i hög kvalitet.'
+      plot: m.plot || ''
     }));
     state.categoryMoviesCache[defaultVodCat.id] = state.movies;
 
@@ -448,13 +441,14 @@ async function loadXtreamAccount(account, updateModal = false) {
       seriesId: s.series_id,
       name: s.name,
       poster: s.cover,
+      categoryId: String(s.category_id || defaultSeriesCat.id),
       rating: s.rating || '8.5',
       seasons: 1,
-      plot: s.plot || 'Svensk serie i HD/4K.'
+      plot: s.plot || ''
     }));
     state.categorySeriesCache[defaultSeriesCat.id] = state.series;
 
-    // Refresh view if user is on movies, series, or home
+    // Re-render if viewing home, movies, or series
     if (['home', 'movies', 'series'].includes(state.currentTab)) {
       renderCurrentTab();
     }
@@ -812,7 +806,7 @@ function renderCurrentTab() {
 
 // 1. Home View (Dashboard)
 function renderHome(container) {
-  const hero = state.movies[0] || state.channels[0];
+  const hero = state.movies[0] || state.series[0] || state.channels[0];
   const favChannels = state.channels.filter(c => state.favorites.has(c.id));
   const popularChannels = state.channels.slice(0, 8);
 
@@ -847,14 +841,14 @@ function renderHome(container) {
         <div class="icon">🎬</div>
         <div>
           <div class="label">Filmer</div>
-          <div class="count">${state.movies.length > 0 ? state.movies.length + ' st' : 'Klicka för filmer'}</div>
+          <div class="count">${state.movieCategories.length} kategorier</div>
         </div>
       </div>
-      <div class="shortcut-card shortcut-favs" onclick="state.showFavoritesOnly = true; switchTab('live');">
-        <div class="icon">★</div>
+      <div class="shortcut-card shortcut-favs" onclick="switchTab('series')">
+        <div class="icon">🎞️</div>
         <div>
-          <div class="label">Favoriter</div>
-          <div class="count">${state.favorites.size} st</div>
+          <div class="label">Serier</div>
+          <div class="count">${state.seriesCategories.length} kategorier</div>
         </div>
       </div>
     </div>
@@ -881,11 +875,11 @@ function renderHome(container) {
     <!-- Trending Movies -->
     ${state.movies.length > 0 ? `
       <div class="section-header">
-        <div class="section-title">Senaste Filmer</div>
+        <div class="section-title">Senaste Filmer (${state.movies.length} st)</div>
         <div style="font-size: 13px; color: var(--primary); font-weight: 700; cursor: pointer;" onclick="switchTab('movies')">Visa alla ›</div>
       </div>
       <div class="h-scroll">
-        ${state.movies.slice(0, 10).map(m => `
+        ${state.movies.slice(0, 12).map(m => `
           <div class="movie-poster-card" onclick="openMovieModal('${m.id}')">
             <div class="movie-poster-box">
               ${m.poster ? `<img src="${m.poster}" class="movie-poster-img" alt="${m.name}" onerror="this.style.display='none'">` : ''}
@@ -905,11 +899,11 @@ function renderHome(container) {
     <!-- Trending Series -->
     ${state.series.length > 0 ? `
       <div class="section-header">
-        <div class="section-title">Populära Serier</div>
+        <div class="section-title">Populära Serier (${state.series.length} st)</div>
         <div style="font-size: 13px; color: var(--primary); font-weight: 700; cursor: pointer;" onclick="switchTab('series')">Visa alla ›</div>
       </div>
       <div class="h-scroll">
-        ${state.series.slice(0, 10).map(s => `
+        ${state.series.slice(0, 12).map(s => `
           <div class="movie-poster-card" onclick="openSeriesModal('${s.id}')">
             <div class="movie-poster-box">
               ${s.poster ? `<img src="${s.poster}" class="movie-poster-img" alt="${s.name}" onerror="this.style.display='none'">` : ''}
@@ -917,7 +911,7 @@ function renderHome(container) {
               ${s.rating ? `<div class="movie-rating-badge">★ ${s.rating}</div>` : ''}
             </div>
             <div class="movie-title">${s.name}</div>
-            <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">${s.seasons} Säsonger</div>
+            <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Klicka för avsnitt</div>
           </div>
         `).join('')}
       </div>
@@ -1015,7 +1009,7 @@ function renderLiveTV(container) {
 
     <!-- Category Pills -->
     <div class="filter-bar">
-      ${state.liveCategories.map(cat => `
+      ${state.liveCategories.slice(0, 35).map(cat => `
         <button class="filter-pill ${state.selectedLiveCategory === cat.id ? 'active' : ''}" onclick="selectLiveCategory('${cat.id}')">
           ${cat.name}
         </button>
@@ -1062,6 +1056,8 @@ function renderLiveTV(container) {
 // 3. Movies View
 async function selectMovieCategory(catId) {
   state.selectedMovieCategory = catId;
+  state.moviePage = 1;
+
   if (state.categoryMoviesCache && state.categoryMoviesCache[catId]) {
     state.movies = state.categoryMoviesCache[catId];
     renderMovies(document.getElementById('tab-content'));
@@ -1075,7 +1071,7 @@ async function selectMovieCategory(catId) {
     const user = state.activeAccount.username;
     const pass = state.activeAccount.password;
     const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
-    const targetUrl = catId !== 'all' ? `${base}&action=get_vod_streams&category_id=${catId}` : `${base}&action=get_vod_streams&category_id=167`;
+    const targetUrl = `${base}&action=get_vod_streams&category_id=${catId}`;
     
     try {
       const streams = await robustFetch(targetUrl, true);
@@ -1089,7 +1085,7 @@ async function selectMovieCategory(catId) {
           categoryId: String(m.category_id || catId),
           rating: m.rating || '8.0',
           year: m.year || '2026',
-          plot: m.plot || 'Svensk film i hög kvalitet.'
+          plot: m.plot || ''
         }));
         state.categoryMoviesCache[catId] = state.movies;
       }
@@ -1103,11 +1099,16 @@ async function selectMovieCategory(catId) {
 }
 
 function renderMovies(container) {
+  const currentCat = state.movieCategories.find(c => c.id === state.selectedMovieCategory) || { name: 'Vald kategori' };
   const filtered = state.movies.filter(m => {
-    const matchCat = state.selectedMovieCategory === 'all' || m.categoryId === state.selectedMovieCategory;
     const matchSearch = !state.movieSearchQuery || m.name.toLowerCase().includes(state.movieSearchQuery.toLowerCase());
-    return matchCat && matchSearch;
+    return matchSearch;
   });
+
+  const page = state.moviePage || 1;
+  const pageSize = 60;
+  const displayed = filtered.slice(0, page * pageSize);
+  const hasMore = filtered.length > displayed.length;
 
   container.innerHTML = `
     <!-- Top Nav Back Bar -->
@@ -1115,19 +1116,28 @@ function renderMovies(container) {
       <button class="btn-header" style="padding: 6px 14px; font-size: 13px; font-weight: 700; color: var(--primary);" onclick="switchTab('home')">
         ‹ Startsida
       </button>
-      <span style="font-size: 13px; color: var(--text-dim); font-weight: 600;">${filtered.length} filmer</span>
+      <span style="font-size: 13px; color: var(--text-dim); font-weight: 600;">${filtered.length} st i "${currentCat.name}"</span>
     </div>
 
     <!-- Movie Search Bar -->
     <div class="search-box">
       <span>🔍</span>
-      <input type="text" class="search-input" placeholder="Sök bland filmer..." value="${state.movieSearchQuery || ''}" oninput="state.movieSearchQuery = this.value; renderMovies(document.getElementById('tab-content'))">
+      <input type="text" class="search-input" placeholder="Sök bland filmer i denna kategori..." value="${state.movieSearchQuery || ''}" oninput="state.movieSearchQuery = this.value; state.moviePage = 1; renderMovies(document.getElementById('tab-content'))">
     </div>
 
-    <!-- Category Pills -->
+    <!-- Category Dropdown Picker (All 328 categories accessible) -->
+    <div style="margin: 0 16px 12px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 700; color: var(--text-dim); white-space: nowrap;">📁 Välj Kategori (${state.movieCategories.length} st):</span>
+      <select style="background: transparent; border: none; color: var(--primary); font-size: 13px; font-weight: 800; max-width: 60%; outline: none; -webkit-appearance: none; cursor: pointer; text-align: right;" onchange="state.moviePage = 1; selectMovieCategory(this.value)">
+        ${state.movieCategories.map(cat => `<option value="${cat.id}" ${state.selectedMovieCategory === cat.id ? 'selected' : ''} style="background: #1C1C1E; color: #fff;">${cat.name}</option>`).join('')}
+      </select>
+      <span style="font-size: 11px; color: var(--primary); margin-left: 6px;">▼</span>
+    </div>
+
+    <!-- Category Pills (First 35 categories) -->
     <div class="filter-bar">
-      ${state.movieCategories.map(cat => `
-        <button class="filter-pill ${state.selectedMovieCategory === cat.id ? 'active' : ''}" onclick="selectMovieCategory('${cat.id}')">
+      ${state.movieCategories.slice(0, 35).map(cat => `
+        <button class="filter-pill ${state.selectedMovieCategory === cat.id ? 'active' : ''}" onclick="state.moviePage = 1; selectMovieCategory('${cat.id}')">
           ${cat.name}
         </button>
       `).join('')}
@@ -1137,16 +1147,16 @@ function renderMovies(container) {
     ${state.moviesLoading ? `
       <div style="text-align: center; padding: 60px 20px;">
         <div style="width: 44px; height: 44px; border: 3px solid rgba(10,132,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto;"></div>
-        <div style="font-weight: 700;">Hämtar filmer från Sverige 8K...</div>
+        <div style="font-weight: 700;">Hämtar filmer...</div>
       </div>
     ` : filtered.length === 0 ? `
       <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
         <div style="font-size: 40px; margin-bottom: 12px;">🎬</div>
-        <div>Inga filmer hittades i denna kategori. Välj en annan kategori ovanför.</div>
+        <div>Inga filmer hittades i denna kategori. Välj en annan kategori i rullistan ovanför.</div>
       </div>
     ` : `
       <div class="catalog-grid">
-        ${filtered.map(m => `
+        ${displayed.map(m => `
           <div class="movie-poster-card" onclick="openMovieModal('${m.id}')">
             <div class="movie-poster-box" style="width: 100%; height: 160px;">
               ${m.poster ? `<img src="${m.poster}" class="movie-poster-img" alt="${m.name}" onerror="this.style.display='none'">` : ''}
@@ -1161,6 +1171,13 @@ function renderMovies(container) {
           </div>
         `).join('')}
       </div>
+      ${hasMore ? `
+        <div style="text-align: center; padding: 24px 16px 40px 16px;">
+          <button class="btn-primary" style="display: inline-block; width: auto; padding: 12px 32px;" onclick="state.moviePage = (state.moviePage || 1) + 1; renderMovies(document.getElementById('tab-content'))">
+            Visa fler (${filtered.length - displayed.length} kvar)
+          </button>
+        </div>
+      ` : ''}
     `}
   `;
 }
@@ -1168,6 +1185,8 @@ function renderMovies(container) {
 // 4. Series View
 async function selectSeriesCategory(catId) {
   state.selectedSeriesCategory = catId;
+  state.seriesPage = 1;
+
   if (state.categorySeriesCache && state.categorySeriesCache[catId]) {
     state.series = state.categorySeriesCache[catId];
     renderSeries(document.getElementById('tab-content'));
@@ -1181,7 +1200,7 @@ async function selectSeriesCategory(catId) {
     const user = state.activeAccount.username;
     const pass = state.activeAccount.password;
     const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
-    const targetUrl = catId !== 'all' ? `${base}&action=get_series&category_id=${catId}` : `${base}&action=get_series&category_id=96`;
+    const targetUrl = `${base}&action=get_series&category_id=${catId}`;
     
     try {
       const streams = await robustFetch(targetUrl, true);
@@ -1191,9 +1210,10 @@ async function selectSeriesCategory(catId) {
           seriesId: s.series_id,
           name: s.name,
           poster: s.cover,
+          categoryId: String(s.category_id || catId),
           rating: s.rating || '8.5',
           seasons: 1,
-          plot: s.plot || 'Svensk serie i HD/4K.'
+          plot: s.plot || ''
         }));
         state.categorySeriesCache[catId] = state.series;
       }
@@ -1207,11 +1227,16 @@ async function selectSeriesCategory(catId) {
 }
 
 function renderSeries(container) {
+  const currentCat = state.seriesCategories.find(c => c.id === state.selectedSeriesCategory) || { name: 'Vald kategori' };
   const filtered = state.series.filter(s => {
-    const matchCat = state.selectedSeriesCategory === 'all' || s.categoryId === state.selectedSeriesCategory;
     const matchSearch = !state.seriesSearchQuery || s.name.toLowerCase().includes(state.seriesSearchQuery.toLowerCase());
-    return matchCat && matchSearch;
+    return matchSearch;
   });
+
+  const page = state.seriesPage || 1;
+  const pageSize = 60;
+  const displayed = filtered.slice(0, page * pageSize);
+  const hasMore = filtered.length > displayed.length;
 
   container.innerHTML = `
     <!-- Top Nav Back Bar -->
@@ -1219,19 +1244,28 @@ function renderSeries(container) {
       <button class="btn-header" style="padding: 6px 14px; font-size: 13px; font-weight: 700; color: var(--primary);" onclick="switchTab('home')">
         ‹ Startsida
       </button>
-      <span style="font-size: 13px; color: var(--text-dim); font-weight: 600;">${filtered.length} serier</span>
+      <span style="font-size: 13px; color: var(--text-dim); font-weight: 600;">${filtered.length} st i "${currentCat.name}"</span>
     </div>
 
     <!-- Series Search Bar -->
     <div class="search-box">
       <span>🔍</span>
-      <input type="text" class="search-input" placeholder="Sök serier..." value="${state.seriesSearchQuery || ''}" oninput="state.seriesSearchQuery = this.value; renderSeries(document.getElementById('tab-content'))">
+      <input type="text" class="search-input" placeholder="Sök bland serier i denna kategori..." value="${state.seriesSearchQuery || ''}" oninput="state.seriesSearchQuery = this.value; state.seriesPage = 1; renderSeries(document.getElementById('tab-content'))">
     </div>
 
-    <!-- Category Pills -->
+    <!-- Category Dropdown Picker (All 249 categories accessible) -->
+    <div style="margin: 0 16px 12px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 700; color: var(--text-dim); white-space: nowrap;">📁 Välj Kategori (${state.seriesCategories.length} st):</span>
+      <select style="background: transparent; border: none; color: var(--primary); font-size: 13px; font-weight: 800; max-width: 60%; outline: none; -webkit-appearance: none; cursor: pointer; text-align: right;" onchange="state.seriesPage = 1; selectSeriesCategory(this.value)">
+        ${state.seriesCategories.map(cat => `<option value="${cat.id}" ${state.selectedSeriesCategory === cat.id ? 'selected' : ''} style="background: #1C1C1E; color: #fff;">${cat.name}</option>`).join('')}
+      </select>
+      <span style="font-size: 11px; color: var(--primary); margin-left: 6px;">▼</span>
+    </div>
+
+    <!-- Category Pills (First 35 categories) -->
     <div class="filter-bar">
-      ${state.seriesCategories.map(cat => `
-        <button class="filter-pill ${state.selectedSeriesCategory === cat.id ? 'active' : ''}" onclick="selectSeriesCategory('${cat.id}')">
+      ${state.seriesCategories.slice(0, 35).map(cat => `
+        <button class="filter-pill ${state.selectedSeriesCategory === cat.id ? 'active' : ''}" onclick="state.seriesPage = 1; selectSeriesCategory('${cat.id}')">
           ${cat.name}
         </button>
       `).join('')}
@@ -1241,16 +1275,16 @@ function renderSeries(container) {
     ${state.seriesLoading ? `
       <div style="text-align: center; padding: 60px 20px;">
         <div style="width: 44px; height: 44px; border: 3px solid rgba(10,132,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto;"></div>
-        <div style="font-weight: 700;">Hämtar serier från Sverige 8K...</div>
+        <div style="font-weight: 700;">Hämtar serier...</div>
       </div>
     ` : filtered.length === 0 ? `
       <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
         <div style="font-size: 40px; margin-bottom: 12px;">🎞️</div>
-        <div>Inga serier hittades i denna kategori. Välj en annan kategori ovanför.</div>
+        <div>Inga serier hittades i denna kategori. Välj en annan kategori i rullistan ovanför.</div>
       </div>
     ` : `
       <div class="catalog-grid">
-        ${filtered.map(s => `
+        ${displayed.map(s => `
           <div class="movie-poster-card" onclick="openSeriesModal('${s.id}')">
             <div class="movie-poster-box" style="width: 100%; height: 160px;">
               ${s.poster ? `<img src="${s.poster}" class="movie-poster-img" alt="${s.name}" onerror="this.style.display='none'">` : ''}
@@ -1262,6 +1296,13 @@ function renderSeries(container) {
           </div>
         `).join('')}
       </div>
+      ${hasMore ? `
+        <div style="text-align: center; padding: 24px 16px 40px 16px;">
+          <button class="btn-primary" style="display: inline-block; width: auto; padding: 12px 32px;" onclick="state.seriesPage = (state.seriesPage || 1) + 1; renderSeries(document.getElementById('tab-content'))">
+            Visa fler (${filtered.length - displayed.length} kvar)
+          </button>
+        </div>
+      ` : ''}
     `}
   `;
 }
@@ -1298,7 +1339,7 @@ function renderSettings(container) {
         <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">App-information</div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-glass);">
           <span>Version</span>
-          <span style="color: var(--accent-cyan); font-weight: 600; font-size: 13px;">v4.0 (PWA & iOS)</span>
+          <span style="color: var(--accent-cyan); font-weight: 600; font-size: 13px;">v5.0 (PWA & iOS)</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-glass);">
           <span>VLC-stöd</span>
@@ -1321,7 +1362,7 @@ function renderSettings(container) {
       </button>
 
       <div style="text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 24px;">
-        IPTV Neo v4.0 • Utvecklad för iPhone & iPad
+        IPTV Neo v5.0 • Utvecklad för iPhone & iPad
       </div>
     </div>
   `;
@@ -1419,7 +1460,7 @@ function openMovieModal(id) {
       </div>
       <div style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">${mov.name}</div>
       <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">${mov.year || '2026'} • Betyg: ★ ${mov.rating || '8.0'}</div>
-      <div style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 24px; text-align: left;">${mov.plot || 'Svensk film i hög kvalitet.'}</div>
+      <div style="font-size: 13px; line-height: 1.5; color: var(--text-muted); margin-bottom: 24px; text-align: left;">${mov.plot || 'Film i hög kvalitet.'}</div>
       
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <a href="${vlcUrl}" class="btn-primary" style="background: linear-gradient(135deg, #FF9500 0%, #FF5E3A 100%); text-align: center; text-decoration: none; display: block; font-weight: 800; padding: 14px;">
@@ -1448,7 +1489,7 @@ async function openSeriesModal(id) {
       <div id="series-episodes-box" style="text-align: left; margin-top: 20px;">
         <div style="text-align: center; padding: 20px;">
           <div style="width: 32px; height: 32px; border: 2px solid rgba(10,132,255,0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px auto;"></div>
-          <div style="font-size: 13px;">Hämtar avsnitt...</div>
+          <div style="font-size: 13px;">Hämtar avsnitt från servern...</div>
         </div>
       </div>
       <button class="btn-header" style="margin: 20px auto 0 auto;" onclick="closeModal()">Stäng</button>

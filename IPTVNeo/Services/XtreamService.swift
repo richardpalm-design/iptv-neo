@@ -152,4 +152,55 @@ class XtreamService {
         
         return (movies, categories)
     }
+    
+    func fetchSeries(account: IPTVAccount) async throws -> (series: [SeriesItem], categories: [CategoryItem]) {
+        let server = cleanServerUrl(account.serverUrl)
+        
+        var categories: [CategoryItem] = [CategoryItem(id: "all", name: "Alla serier")]
+        if let catUrl = URL(string: "\(server)/player_api.php?username=\(account.username)&password=\(account.password)&action=get_series_categories"),
+           let (catData, _) = try? await URLSession.shared.data(from: catUrl),
+           let catJson = try? JSONSerialization.jsonObject(with: catData) as? [[String: Any]] {
+            for item in catJson {
+                if let id = item["category_id"] as? String ?? (item["category_id"] as? Int).map(String.init),
+                   let name = item["category_name"] as? String {
+                    categories.append(CategoryItem(id: id, name: name))
+                }
+            }
+        }
+        
+        // Load default popular series category
+        let targetCat = categories.first(where: { $0.id != "all" })?.id ?? "138"
+        guard let streamUrl = URL(string: "\(server)/player_api.php?username=\(account.username)&password=\(account.password)&action=get_series&category_id=\(targetCat)") else {
+            return ([], categories)
+        }
+        
+        let (streamData, _) = try await URLSession.shared.data(from: streamUrl)
+        guard let streamJson = try? JSONSerialization.jsonObject(with: streamData) as? [[String: Any]] else {
+            return ([], categories)
+        }
+        
+        var seriesList: [SeriesItem] = []
+        for item in streamJson {
+            guard let seriesId = item["series_id"] as? Int,
+                  let name = item["name"] as? String else { continue }
+            
+            let icon = item["cover"] as? String
+            let rating = item["rating"] as? String
+            let catId = (item["category_id"] as? String) ?? (item["category_id"] as? Int).map(String.init) ?? targetCat
+            let id = "xtream_ser_\(seriesId)"
+            
+            seriesList.append(SeriesItem(
+                id: id,
+                seriesId: seriesId,
+                name: name,
+                coverUrl: icon,
+                categoryId: catId,
+                rating: rating,
+                seasonsCount: 1,
+                plot: (item["plot"] as? String)
+            ))
+        }
+        
+        return (seriesList, categories)
+    }
 }

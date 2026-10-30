@@ -115,11 +115,15 @@ class AppState: ObservableObject {
                 if account.type == .xtream {
                     let liveResult = try await XtreamService.shared.fetchLiveStreams(account: account)
                     let vodResult = try? await XtreamService.shared.fetchVODMovies(account: account)
+                    let seriesResult = try? await XtreamService.shared.fetchSeries(account: account)
                     
                     self.channels = liveResult.channels
                     self.liveCategories = liveResult.categories
                     self.movies = vodResult?.movies ?? []
                     self.movieCategories = vodResult?.categories ?? [CategoryItem(id: "all", name: "Alla filmer")]
+                    if let sRes = seriesResult, !sRes.series.isEmpty {
+                        self.series = sRes.series
+                    }
                 } else if account.type == .m3u, let m3uUrl = account.m3uUrl, let url = URL(string: m3uUrl) {
                     let (data, _) = try await URLSession.shared.data(from: url)
                     if let content = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) {
