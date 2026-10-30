@@ -322,6 +322,7 @@ function renderLoadingHome(message = 'Ansluter till Sverige 8K...') {
 }
 
 // Dedicated Xtream Codes loader used on boot and in login modal
+// Complete Xtream Loader: Live TV, VOD Movies & Series (Swedish Priority)
 async function loadXtreamAccount(account, updateModal = false) {
   const name = account.name || 'Sverige 8K';
   const server = cleanServerUrl(account.serverUrl);
@@ -332,7 +333,7 @@ async function loadXtreamAccount(account, updateModal = false) {
     throw new Error('Server URL, Användarnamn och Lösenord krävs.');
   }
 
-  if (updateModal) showModalStatus('Ansluter till IPTV-servern...', false, true);
+  if (updateModal) showModalStatus('Ansluter till Sverige 8K...', false, true);
 
   const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
@@ -343,7 +344,7 @@ async function loadXtreamAccount(account, updateModal = false) {
   }
 
   if (authData?.user_info && String(authData.user_info.auth) === '0') {
-    throw new Error('Inloggningen nekades av servern (Felaktigt användarnamn eller lösenord).');
+    throw new Error('Inloggningen nekades av servern (felaktigt användarnamn eller lösenord).');
   }
 
   const status = authData?.user_info?.status || 'Aktiv';
@@ -355,43 +356,90 @@ async function loadXtreamAccount(account, updateModal = false) {
     }
   }
 
-  if (updateModal) showModalStatus('Inloggad! Hämtar kanallistor...', false, true);
+  if (updateModal) showModalStatus('Inloggad! Hämtar kategorier...', false, true);
 
-  // 2. Fetch live streams and categories in parallel
-  const [liveCats, liveStreams] = await Promise.all([
-    robustFetch(`${base}&action=get_live_categories`, true).catch(err => {
-      console.warn('Could not load categories:', err);
-      return [];
-    }),
-    robustFetch(`${base}&action=get_live_streams`, true).catch(err => {
-      console.warn('Could not load streams:', err);
-      return [];
-    })
+  // 2. Fetch categories for Live, VOD, and Series in parallel (tiny ~150KB total)
+  const [liveCatsRaw, vodCatsRaw, seriesCatsRaw] = await Promise.all([
+    robustFetch(`${base}&action=get_live_categories`, true).catch(() => []),
+    robustFetch(`${base}&action=get_vod_categories`, true).catch(() => []),
+    robustFetch(`${base}&action=get_series_categories`, true).catch(() => [])
   ]);
 
-  const channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
+  // Helper to sort Swedish categories to the top
+  const sortSwedish = (arr) => {
+    return arr.map(c => ({ id: String(c.category_id), name: c.category_name })).sort((a, b) => {
+      const aSe = a.name.startsWith('SE|') || a.name.toLowerCase().includes('svensk') || a.name.toLowerCase().includes('sweden') || a.name.toLowerCase().includes('nordic');
+      const bSe = b.name.startsWith('SE|') || b.name.toLowerCase().includes('svensk') || b.name.toLowerCase().includes('sweden') || b.name.toLowerCase().includes('nordic');
+      if (aSe && !bSe) return -1;
+      if (!aSe && bSe) return 1;
+      return 0;
+    });
+  };
+
+  const liveCats = sortSwedish(Array.isArray(liveCatsRaw) ? liveCatsRaw : []);
+  const vodCats = sortSwedish(Array.isArray(vodCatsRaw) ? vodCatsRaw : []);
+  const seriesCats = sortSwedish(Array.isArray(seriesCatsRaw) ? seriesCatsRaw : []);
+
+  state.liveCategories = [{ id: 'all', name: 'Alla kanaler' }, ...liveCats];
+  state.movieCategories = [{ id: 'all', name: 'Alla filmer' }, ...vodCats];
+  state.seriesCategories = [{ id: 'all', name: 'Alla serier' }, ...seriesCats];
+
+  // Pick default Swedish category IDs
+  const defaultLiveCat = liveCats.find(c => c.name.startsWith('SE| SWEDEN') || c.id === '48') || liveCats[0] || { id: 'all' };
+  const defaultVodCat = vodCats.find(c => c.name.includes('SVENSKA') || c.id === '167') || vodCats[0] || { id: 'all' };
+  const defaultSeriesCat = seriesCats.find(c => c.name.includes('SVENSK') || c.id === '96') || seriesCats[0] || { id: 'all' };
+
+  state.selectedLiveCategory = defaultLiveCat.id;
+  state.selectedMovieCategory = defaultVodCat.id;
+  state.selectedSeriesCategory = defaultSeriesCat.id;
+
+  state.categoryChannelsCache = state.categoryChannelsCache || {};
+  state.categoryMoviesCache = state.categoryMoviesCache || {};
+  state.categorySeriesCache = state.categorySeriesCache || {};
+
+  // 3. Fetch Initial Swedish content in parallel (~200KB total)
+  const [liveStreams, vodStreams, seriesList] = await Promise.all([
+    robustFetch(`${base}&action=get_live_streams&category_id=${defaultLiveCat.id}`, true).catch(() => []),
+    robustFetch(`${base}&action=get_vod_streams&category_id=${defaultVodCat.id}`, true).catch(() => []),
+    robustFetch(`${base}&action=get_series&category_id=${defaultSeriesCat.id}`, true).catch(() => [])
+  ]);
+
+  state.channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
     id: `xtream_${s.stream_id}`,
     streamId: s.stream_id,
     name: s.name,
     logo: s.stream_icon,
     url: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
-    categoryId: String(s.category_id || 'all'),
+    rawUrl: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.ts`,
+    categoryId: String(s.category_id || defaultLiveCat.id),
     epg: s.epg_channel_id ? `EPG: ${s.epg_channel_id}` : 'Livesändning'
   }));
 
-  if (channels.length === 0) {
-    throw new Error('Inloggningen lyckades men servern returnerade 0 aktiva kanaler.');
-  }
+  state.movies = (Array.isArray(vodStreams) ? vodStreams : []).map(m => ({
+    id: `vod_${m.stream_id}`,
+    streamId: m.stream_id,
+    name: m.name,
+    poster: m.stream_icon,
+    url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
+    categoryId: String(m.category_id || defaultVodCat.id),
+    rating: m.rating || '8.2',
+    year: m.year || '2026',
+    plot: m.plot || 'Svensk film i hög kvalitet.'
+  }));
 
-  // Sort categories: Swedish/Nordic on top
-  const rawCats = Array.isArray(liveCats) ? liveCats.map(c => ({ id: String(c.category_id), name: c.category_name })) : [];
-  rawCats.sort((a, b) => {
-    const aIsSe = a.name.startsWith('SE|') || a.name.toLowerCase().includes('sweden') || a.name.toLowerCase().includes('sverige');
-    const bIsSe = b.name.startsWith('SE|') || b.name.toLowerCase().includes('sweden') || b.name.toLowerCase().includes('sverige');
-    if (aIsSe && !bIsSe) return -1;
-    if (!aIsSe && bIsSe) return 1;
-    return 0;
-  });
+  state.series = (Array.isArray(seriesList) ? seriesList : []).map(s => ({
+    id: `ser_${s.series_id}`,
+    seriesId: s.series_id,
+    name: s.name,
+    poster: s.cover,
+    rating: s.rating || '8.5',
+    seasons: 1,
+    plot: s.plot || 'Svensk serie i HD/4K.'
+  }));
+
+  state.categoryChannelsCache[defaultLiveCat.id] = state.channels;
+  state.categoryMoviesCache[defaultVodCat.id] = state.movies;
+  state.categorySeriesCache[defaultSeriesCat.id] = state.series;
 
   const updatedAccount = {
     id: account.id || ('acc_' + Date.now()),
@@ -407,53 +455,21 @@ async function loadXtreamAccount(account, updateModal = false) {
   state.accounts = state.accounts.filter(a => a.username !== user && a.id !== updatedAccount.id);
   state.accounts.unshift(updatedAccount);
   state.activeAccount = updatedAccount;
-  state.channels = channels;
-  state.liveCategories = [
-    { id: 'all', name: 'Alla kanaler' },
-    ...rawCats
-  ];
-
-  // Set default category to Swedish HD if available
-  const seCat = rawCats.find(c => c.name.startsWith('SE| SWEDEN') || c.id === '48');
-  state.selectedLiveCategory = seCat ? seCat.id : 'all';
-  state.channelPage = 1;
-
   saveAccounts();
 
   if (updateModal) {
-    showModalStatus(`Klart! Laddade ${channels.length} kanaler.`, false, false);
+    showModalStatus(`Klart! Laddade ${state.channels.length} kanaler, ${state.movies.length} filmer och ${state.series.length} serier.`, false, false);
     setTimeout(() => {
       closeModal();
       renderCurrentTab();
-    }, 600);
+    }, 500);
   } else {
     renderCurrentTab();
   }
 
-  // 3. Load VOD Movies in background
-  robustFetch(`${base}&action=get_vod_streams`, true).then(vodStreams => {
-    if (Array.isArray(vodStreams) && vodStreams.length > 0) {
-      state.movies = vodStreams.map(m => ({
-        id: `vod_${m.stream_id}`,
-        streamId: m.stream_id,
-        name: m.name,
-        poster: m.stream_icon,
-        url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
-        categoryId: String(m.category_id || 'all'),
-        rating: m.rating || '8.0',
-        year: m.year || '',
-        plot: m.plot || ''
-      }));
-      if (state.currentTab === 'movies' || state.currentTab === 'home') {
-        renderCurrentTab();
-      }
-    }
-  }).catch(e => console.log('VOD deferred:', e));
-
   return true;
 }
 
-// Xtream Login Handler (Modal Form)
 async function handleXtreamSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
   
@@ -627,19 +643,38 @@ function playMedia(item) {
   state.nowPlaying = item;
   state.isPlaying = true;
 
+  const vlcUrl = 'vlc://' + item.url.replace(/^https?:\/\//, '');
+  const vlcCallback = 'vlc-x-callback://x-callback-url/stream?url=' + encodeURIComponent(item.url);
+
   document.getElementById('hud-channel-name').textContent = item.name;
-  document.getElementById('hud-channel-sub').textContent = item.epg || item.plot || 'DirektsÃ¤ndning';
+  const subEl = document.getElementById('hud-channel-sub');
+  subEl.innerHTML = `
+    <span>${item.epg || item.plot || 'Direktsändning'}</span>
+    <a href="${vlcCallback}" style="display: inline-block; margin-left: 10px; background: rgba(255,149,0,0.3); border: 1px solid #FF9500; color: #FF9500; padding: 2px 8px; border-radius: 99px; font-size: 11px; text-decoration: none; font-weight: 700;">
+      📡 Öppna i VLC
+    </a>
+  `;
+
   document.getElementById('mini-title').textContent = item.name;
   document.getElementById('mini-sub').textContent = item.epg || 'Spelar nu';
 
   videoOverlay.style.display = 'flex';
   miniPlayer.style.display = 'none';
 
+  // Video error handler for Safari HTTP redirect / MKV codec blocks
+  videoEl.onerror = () => {
+    subEl.innerHTML = `
+      <span style="color: #FF375F; font-weight: 700;">⚠️ Safari stöder ej formatet/HTTP.</span>
+      <a href="${vlcCallback}" style="display: inline-block; margin-left: 6px; background: #FF9500; color: #000; padding: 4px 10px; border-radius: 99px; font-size: 12px; text-decoration: none; font-weight: 800;">
+        ▶ Klicka här för att spela i VLC
+      </a>
+    `;
+  };
+
   // HLS stream playback: Native Apple iOS Safari vs Hls.js fallback
   if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-    // Native Apple iOS hardware HLS
     videoEl.src = item.url;
-    videoEl.play().catch(e => console.log('Autoplay:', e));
+    videoEl.play().catch(() => {});
   } else if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
     if (state.hlsInstance) state.hlsInstance.destroy();
     const hls = new Hls({ enableWorker: true });
@@ -649,7 +684,7 @@ function playMedia(item) {
     hls.on(Hls.Events.MANIFEST_PARSED, () => videoEl.play());
   } else {
     videoEl.src = item.url;
-    videoEl.play().catch(e => console.log('Autoplay:', e));
+    videoEl.play().catch(() => {});
   }
 
   renderZapperDrawer();
@@ -949,6 +984,75 @@ function renderLiveTV(container) {
   `;
 }
 
+
+async function selectMovieCategory(catId) {
+  state.selectedMovieCategory = catId;
+  if (state.categoryMoviesCache && state.categoryMoviesCache[catId]) {
+    state.movies = state.categoryMoviesCache[catId];
+    renderMovies(document.getElementById('tab-content'));
+    return;
+  }
+  if (state.activeAccount && state.activeAccount.type === 'xtream') {
+    const server = cleanServerUrl(state.activeAccount.serverUrl);
+    const user = state.activeAccount.username;
+    const pass = state.activeAccount.password;
+    const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+    const targetUrl = catId !== 'all' ? `${base}&action=get_vod_streams&category_id=${catId}` : `${base}&action=get_vod_streams&category_id=167`;
+    renderMovies(document.getElementById('tab-content'));
+    try {
+      const streams = await robustFetch(targetUrl, true);
+      if (Array.isArray(streams)) {
+        state.movies = streams.map(m => ({
+          id: `vod_${m.stream_id}`,
+          streamId: m.stream_id,
+          name: m.name,
+          poster: m.stream_icon,
+          url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
+          categoryId: String(m.category_id || catId),
+          rating: m.rating || '8.0',
+          year: m.year || '2026',
+          plot: m.plot || 'Svensk film i hög kvalitet.'
+        }));
+        state.categoryMoviesCache[catId] = state.movies;
+      }
+    } catch(e) {}
+    renderMovies(document.getElementById('tab-content'));
+  }
+}
+
+async function selectSeriesCategory(catId) {
+  state.selectedSeriesCategory = catId;
+  if (state.categorySeriesCache && state.categorySeriesCache[catId]) {
+    state.series = state.categorySeriesCache[catId];
+    renderSeries(document.getElementById('tab-content'));
+    return;
+  }
+  if (state.activeAccount && state.activeAccount.type === 'xtream') {
+    const server = cleanServerUrl(state.activeAccount.serverUrl);
+    const user = state.activeAccount.username;
+    const pass = state.activeAccount.password;
+    const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+    const targetUrl = catId !== 'all' ? `${base}&action=get_series&category_id=${catId}` : `${base}&action=get_series&category_id=96`;
+    renderSeries(document.getElementById('tab-content'));
+    try {
+      const streams = await robustFetch(targetUrl, true);
+      if (Array.isArray(streams)) {
+        state.series = streams.map(s => ({
+          id: `ser_${s.series_id}`,
+          seriesId: s.series_id,
+          name: s.name,
+          poster: s.cover,
+          rating: s.rating || '8.5',
+          seasons: 1,
+          plot: s.plot || 'Svensk serie i HD/4K.'
+        }));
+        state.categorySeriesCache[catId] = state.series;
+      }
+    } catch(e) {}
+    renderSeries(document.getElementById('tab-content'));
+  }
+}
+
 // 3. Movies View
 function renderMovies(container) {
   const filtered = state.movies.filter(m => {
@@ -961,7 +1065,7 @@ function renderMovies(container) {
     <!-- Category Pills -->
     <div class="filter-bar">
       ${state.movieCategories.map(cat => `
-        <button class="filter-pill ${state.selectedMovieCategory === cat.id ? 'active' : ''}" onclick="state.selectedMovieCategory = '${cat.id}'; renderMovies(document.getElementById('tab-content'))">
+        <button class="filter-pill ${state.selectedMovieCategory === cat.id ? 'active' : ''}" onclick="selectMovieCategory('${cat.id}')">
           ${cat.name}
         </button>
       `).join('')}
