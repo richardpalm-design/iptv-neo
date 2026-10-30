@@ -193,11 +193,11 @@ class XtreamService {
                 id: id,
                 seriesId: seriesId,
                 name: name,
-                coverUrl: icon,
+                posterUrl: icon,
                 categoryId: catId,
                 rating: rating,
-                seasonsCount: 1,
-                plot: (item["plot"] as? String)
+                plot: (item["plot"] as? String),
+                numSeasons: 1
             ))
         }
         
