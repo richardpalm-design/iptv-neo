@@ -54,7 +54,7 @@ class AppState: ObservableObject {
             let defaultAcc = DemoData.defaultSverigeAccount
             self.accounts = [defaultAcc]
             self.activeAccount = defaultAcc
-            StorageService.shared.saveAccounts([defaultAcc])
+            StorageService.shared.saveAccount(defaultAcc)
             StorageService.shared.setActiveAccountId(defaultAcc.id)
             loadContent(for: defaultAcc)
         }
@@ -150,7 +150,7 @@ class AppState: ObservableObject {
         self.nowPlaying = PlayingMediaItem(
             id: channel.id,
             title: channel.name,
-            subtitle: channel.epgTitle ?? "Livesändning",
+            subtitle: channel.epgTitle ?? "LivesÃ¤ndning",
             streamUrl: url,
             posterUrl: channel.logoUrl,
             isLive: true
@@ -163,7 +163,7 @@ class AppState: ObservableObject {
         self.nowPlaying = PlayingMediaItem(
             id: movie.id,
             title: movie.name,
-            subtitle: "\(movie.year ?? "") • Betyg: \(movie.rating ?? "N/A")",
+            subtitle: "\(movie.year ?? "") â€¢ Betyg: \(movie.rating ?? "N/A")",
             streamUrl: url,
             posterUrl: movie.posterUrl,
             isLive: false
