@@ -124,44 +124,68 @@
         <button class="btn-play-hero" onclick="launchDemo()">▶ Starta Demo Nu</button>
       </div>
 
-      <!-- Xtream Codes Form -->
-      <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
-        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Lägg till Xtream Codes</div>
-        <form onsubmit="saveXtreamForm(event)">
+      <!-- Tab Switcher inside Modal -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <button id="tab-btn-xtream" class="filter-pill active" onclick="switchModalTab('xtream')">Xtream Codes</button>
+        <button id="tab-btn-m3u" class="filter-pill" onclick="switchModalTab('m3u')">M3U Spellista</button>
+        <button id="tab-btn-saved" class="filter-pill" onclick="switchModalTab('saved')">Sparade Konton</button>
+      </div>
+
+      <!-- Status / Progress Banner -->
+      <div id="modal-status-box" style="display: none; padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; font-size: 13px; font-weight: 600;"></div>
+
+      <!-- Form 1: Xtream Codes Form -->
+      <div id="modal-sec-xtream" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Anslut med Xtream Codes API</div>
+        <form onsubmit="handleXtreamSubmit(event)">
           <div class="form-group">
             <label class="form-label">Kontonamn</label>
-            <input id="xtream-name" class="form-input" placeholder="Mitt IPTV" required>
+            <input id="xtream-name" class="form-input" placeholder="Mitt IPTV" value="Mitt IPTV" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Server URL</label>
+            <label class="form-label">Server URL (t.ex. http://server.com:8080)</label>
             <input id="xtream-server" class="form-input" placeholder="http://server.com:8080" required>
           </div>
           <div class="form-group">
             <label class="form-label">Användarnamn</label>
-            <input id="xtream-user" class="form-input" placeholder="Användare" required>
+            <input id="xtream-user" class="form-input" placeholder="Användarnamn" required>
           </div>
           <div class="form-group">
             <label class="form-label">Lösenord</label>
             <input id="xtream-pass" type="password" class="form-input" placeholder="••••••••" required>
           </div>
-          <button type="submit" class="btn-primary">Anslut & Spara</button>
+          <button id="btn-xtream-submit" type="submit" class="btn-primary">Anslut & Spara</button>
         </form>
       </div>
 
-      <!-- M3U Playlist Form -->
-      <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+      <!-- Form 2: M3U Playlist Form (URL, File, or Paste) -->
+      <div id="modal-sec-m3u" style="display: none; background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
         <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Lägg till M3U-spellista</div>
-        <form onsubmit="saveM3UForm(event)">
+        
+        <form onsubmit="handleM3USubmit(event)">
           <div class="form-group">
             <label class="form-label">Namn på spellista</label>
-            <input id="m3u-name" class="form-input" placeholder="Min Spellista" required>
+            <input id="m3u-name" class="form-input" placeholder="Min M3U" value="Min M3U" required>
           </div>
           <div class="form-group">
-            <label class="form-label">M3U URL</label>
-            <input id="m3u-url" class="form-input" placeholder="http://.../playlist.m3u" required>
+            <label class="form-label">Alternativ 1: M3U Webbadress (URL)</label>
+            <input id="m3u-url" class="form-input" placeholder="http://.../playlist.m3u">
           </div>
-          <button type="submit" class="btn-primary">Ladda Spellista</button>
+          <div class="form-group">
+            <label class="form-label">Alternativ 2: Välj M3U-fil från enheten</label>
+            <input id="m3u-file" type="file" accept=".m3u,.m3u8,.txt" class="form-input" style="padding: 8px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alternativ 3: Klistra in M3U-text direkt</label>
+            <textarea id="m3u-text" class="form-input" rows="3" placeholder="#EXTM3U..."></textarea>
+          </div>
+          <button id="btn-m3u-submit" type="submit" class="btn-primary">Ladda & Spara Spellista</button>
         </form>
+      </div>
+
+      <!-- Form 3: Saved Accounts List -->
+      <div id="modal-sec-saved" style="display: none;">
+        <div id="saved-accounts-list"></div>
       </div>
     </div>
   </div>

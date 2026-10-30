@@ -195,107 +195,258 @@ function toggleFavorite(id) {
   if ('vibrate' in navigator) navigator.vibrate(20);
 }
 
-// Proxied fetch helper for Xtream servers that lack CORS headers or mixed HTTP
-async function smartFetch(url) {
-  try {
-    const res = await fetch(url);
-    if (res.ok) return await res.json();
-  } catch (err) {
-    // If blocked by CORS or Mixed Content, use fallback CORS proxy
-    console.log('Direct fetch blocked, trying proxy for:', url);
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const proxyRes = await fetch(proxyUrl);
-    return await proxyRes.json();
+// Clean and normalize server URL
+function cleanServerUrl(raw) {
+  let url = (raw || '').trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'http://' + url;
   }
+  return url.replace(/\/+$/, '');
 }
 
-// Xtream API Handler
-async function loadXtreamAccount(account) {
-  let server = account.serverUrl.trim().replace(/\/$/, '');
-  if (!server.startsWith('http://') && !server.startsWith('https://')) {
-    server = 'http://' + server;
+// Multi-Tier Robust Fetcher: Handles Netlify Functions, Direct, and CORS Proxies
+async function robustFetch(url, isJson = true) {
+  url = url.trim();
+
+  const attempts = [
+    // 1. Netlify Serverless Proxy (Runs if deployed on Netlify)
+    `/.netlify/functions/proxy?url=${encodeURIComponent(url)}`,
+    // 2. Direct fetch (works on localhost or HTTPS endpoints)
+    url,
+    // 3. High-speed public CORS proxies
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+  ];
+
+  let lastError = null;
+
+  for (const proxyUrl of attempts) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 18000); // 18s per attempt
+
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      if (isJson) {
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch (jsonErr) {
+          throw new Error('Svaret från servern var inte giltig JSON.');
+        }
+      } else {
+        const text = await res.text();
+        if (text && text.length > 5) return text;
+        throw new Error('Tomt svar från servern');
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(`Fetch via ${proxyUrl} misslyckades:`, err.message);
+    }
   }
 
-  const base = `${server}/player_api.php?username=${encodeURIComponent(account.username)}&password=${encodeURIComponent(account.password)}`;
+  throw lastError || new Error('Kunde inte ansluta till IPTV-servern.');
+}
+
+// Status Box Helper for Account Modal
+function showModalStatus(message, isError = false, isLoading = false) {
+  const box = document.getElementById('modal-status-box');
+  if (!box) return;
+  box.style.display = 'block';
+  box.style.background = isError ? 'rgba(255, 55, 95, 0.2)' : 'rgba(10, 132, 255, 0.2)';
+  box.style.border = `1px solid ${isError ? '#FF375F' : '#0A84FF'}`;
+  box.style.color = isError ? '#FF6987' : '#64D2FF';
+  box.innerHTML = `${isLoading ? '⏳ ' : isError ? '⚠️ ' : '✅ '} ${message}`;
+}
+
+function hideModalStatus() {
+  const box = document.getElementById('modal-status-box');
+  if (box) box.style.display = 'none';
+}
+
+// Xtream Login Handler
+async function handleXtreamSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('xtream-name').value.trim() || 'Mitt IPTV';
+  const server = cleanServerUrl(document.getElementById('xtream-server').value);
+  const user = document.getElementById('xtream-user').value.trim();
+  const pass = document.getElementById('xtream-pass').value.trim();
+
+  const submitBtn = document.getElementById('btn-xtream-submit');
+  submitBtn.disabled = true;
+  showModalStatus('Ansluter till IPTV-servern...', false, true);
+
+  const base = `${server}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
   try {
-    // 1. Auth check
-    const authData = await smartFetch(base);
-    if (authData?.user_info?.status) {
-      account.status = authData.user_info.status;
+    // 1. Authenticate with server
+    const authData = await robustFetch(base, true);
+
+    if (authData?.user_info?.auth === 0) {
+      throw new Error('Inloggningen nekades: Felaktigt användarnamn eller lösenord.');
     }
 
-    // 2. Live Categories & Streams
-    const [liveCats, liveStreams, vodCats, vodStreams] = await Promise.all([
-      smartFetch(`${base}&action=get_live_categories`).catch(() => []),
-      smartFetch(`${base}&action=get_live_streams`).catch(() => []),
-      smartFetch(`${base}&action=get_vod_categories`).catch(() => []),
-      smartFetch(`${base}&action=get_vod_streams`).catch(() => [])
+    const status = authData?.user_info?.status || 'Active';
+    let expDate = 'Obegränsad';
+    if (authData?.user_info?.exp_date) {
+      const expTimestamp = parseInt(authData.user_info.exp_date);
+      if (!isNaN(expTimestamp)) {
+        expDate = new Date(expTimestamp * 1000).toLocaleDateString('sv-SE');
+      }
+    }
+
+    showModalStatus('Inloggad! Hämtar kanallistor och kategorier...', false, true);
+
+    // 2. Fetch categories and streams
+    const [liveCats, liveStreams, vodStreams] = await Promise.all([
+      robustFetch(`${base}&action=get_live_categories`, true).catch(() => []),
+      robustFetch(`${base}&action=get_live_streams`, true).catch(() => []),
+      robustFetch(`${base}&action=get_vod_streams`, true).catch(() => [])
     ]);
 
-    state.liveCategories = [
-      { id: 'all', name: 'Alla kanaler' },
-      ...(Array.isArray(liveCats) ? liveCats.map(c => ({ id: String(c.category_id), name: c.category_name })) : [])
-    ];
-
-    state.channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
+    const channels = (Array.isArray(liveStreams) ? liveStreams : []).map(s => ({
       id: `xtream_${s.stream_id}`,
       streamId: s.stream_id,
       name: s.name,
       logo: s.stream_icon,
-      url: `${server}/live/${account.username}/${account.password}/${s.stream_id}.m3u8`,
+      url: `${server}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
       categoryId: String(s.category_id || 'all'),
       epg: 'Livesändning'
     }));
 
-    state.movieCategories = [
-      { id: 'all', name: 'Alla filmer' },
-      ...(Array.isArray(vodCats) ? vodCats.map(c => ({ id: String(c.category_id), name: c.category_name })) : [])
-    ];
-
-    state.movies = (Array.isArray(vodStreams) ? vodStreams : []).map(m => ({
+    const movies = (Array.isArray(vodStreams) ? vodStreams : []).map(m => ({
       id: `vod_${m.stream_id}`,
       streamId: m.stream_id,
       name: m.name,
       poster: m.stream_icon,
-      url: `${server}/movie/${account.username}/${account.password}/${m.stream_id}.${m.container_extension || 'mp4'}`,
+      url: `${server}/movie/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${m.stream_id}.${m.container_extension || 'mp4'}`,
       categoryId: String(m.category_id || 'all'),
       rating: m.rating || '8.0',
       year: m.year || '',
       plot: m.plot || ''
     }));
 
+    if (channels.length === 0 && movies.length === 0) {
+      throw new Error('Kontot är inloggat, men servern returnerade 0 kanaler.');
+    }
+
+    // Save and activate account
+    const account = {
+      id: 'acc_' + Date.now(),
+      name,
+      type: 'xtream',
+      serverUrl: server,
+      username: user,
+      password: pass,
+      status,
+      expDate
+    };
+
+    state.accounts = state.accounts.filter(a => a.id !== account.id);
+    state.accounts.unshift(account);
+    state.activeAccount = account;
+    state.channels = channels;
+    state.movies = movies;
     state.series = [];
-    renderCurrentTab();
+    state.liveCategories = [
+      { id: 'all', name: 'Alla kanaler' },
+      ...(Array.isArray(liveCats) ? liveCats.map(c => ({ id: String(c.category_id), name: c.category_name })) : [])
+    ];
+
+    saveAccounts();
+    showModalStatus(`Klart! Laddade ${channels.length} kanaler och ${movies.length} filmer.`, false, false);
+
+    setTimeout(() => {
+      closeModal();
+      renderCurrentTab();
+    }, 800);
   } catch (err) {
-    alert('Kunde inte ansluta till Xtream-servern: ' + err.message);
+    showModalStatus('Fel vid anslutning: ' + err.message, true, false);
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
+// M3U Playlist Handler (URL, File, or Text)
+async function handleM3USubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('m3u-name').value.trim() || 'Min M3U';
+  const url = document.getElementById('m3u-url').value.trim();
+  const fileInput = document.getElementById('m3u-file');
+  const textInput = document.getElementById('m3u-text').value.trim();
+  const submitBtn = document.getElementById('btn-m3u-submit');
+
+  submitBtn.disabled = true;
+
+  try {
+    let content = '';
+
+    // Option 1: File Upload
+    if (fileInput.files && fileInput.files.length > 0) {
+      showModalStatus('Läser in M3U-fil från enheten...', false, true);
+      const file = fileInput.files[0];
+      content = await file.text();
+    }
+    // Option 2: Pasted Text
+    else if (textInput.length > 0) {
+      showModalStatus('Tolkar klistrad spellista...', false, true);
+      content = textInput;
+    }
+    // Option 3: Download from URL
+    else if (url.length > 0) {
+      showModalStatus('Laddar ner M3U-spellista via proxy...', false, true);
+      content = await robustFetch(url, false);
+    } else {
+      throw new Error('Ange en M3U-URL, välj en fil eller klistra in text.');
+    }
+
+    showModalStatus('Analyserar kanaler...', false, true);
+    parseM3U(content, name, url);
+
+    showModalStatus(`Klart! Laddade ${state.channels.length} kanaler.`, false, false);
+    setTimeout(() => {
+      closeModal();
+      renderCurrentTab();
+    }, 800);
+  } catch (err) {
+    showModalStatus('Kunde inte läsa spellistan: ' + err.message, true, false);
+  } finally {
+    submitBtn.disabled = false;
   }
 }
 
 // M3U Parser
-function parseM3U(content) {
-  const lines = content.split('\n');
+function parseM3U(content, accountName = 'M3U Spellista', sourceUrl = '') {
+  if (!content) throw new Error('Spellistan är tom.');
+
+  const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const channels = [];
   const catMap = {};
   let currentName = '';
   let currentLogo = '';
   let currentGroup = 'Allmän';
 
-  for (let line of lines) {
-    line = line.trim();
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
     if (!line) continue;
 
     if (line.startsWith('#EXTINF:')) {
-      const groupMatch = line.match(/group-title="([^"]+)"/);
-      currentGroup = groupMatch ? groupMatch[1] : 'Allmän';
+      const groupMatch = line.match(/group-title=["']?([^"',]+)["']?/i);
+      currentGroup = groupMatch && groupMatch[1].trim() ? groupMatch[1].trim() : 'Allmän';
 
-      const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-      currentLogo = logoMatch ? logoMatch[1] : '';
+      const logoMatch = line.match(/tvg-logo=["']?([^"'\s,]+)["']?/i);
+      currentLogo = logoMatch && logoMatch[1].trim() ? logoMatch[1].trim() : '';
 
       const commaIdx = line.lastIndexOf(',');
-      currentName = commaIdx !== -1 ? line.substring(commaIdx + 1).trim() : 'Kanal';
-    } else if (!line.startsWith('#') && (line.startsWith('http://') || line.startsWith('https://'))) {
-      const catId = currentGroup.toLowerCase().replace(/\s+/g, '_');
+      currentName = commaIdx !== -1 ? line.substring(commaIdx + 1).trim() : '';
+    } else if (!line.startsWith('#') && (line.startsWith('http://') || line.startsWith('https://') || line.startsWith('rtmp://'))) {
+      const catId = currentGroup.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'general';
       catMap[catId] = currentGroup;
 
       channels.push({
@@ -307,11 +458,29 @@ function parseM3U(content) {
         categoryId: catId,
         epg: 'Livesändning'
       });
+
       currentName = '';
       currentLogo = '';
+      currentGroup = 'Allmän';
     }
   }
 
+  if (channels.length === 0) {
+    throw new Error('Hittade inga giltiga strömmar i M3U-filen. Kontrollera formatet.');
+  }
+
+  const account = {
+    id: 'm3u_' + Date.now(),
+    name: accountName,
+    type: 'm3u',
+    url: sourceUrl,
+    status: 'Aktiv',
+    expDate: 'Obegränsad'
+  };
+
+  state.accounts = state.accounts.filter(a => a.id !== account.id);
+  state.accounts.unshift(account);
+  state.activeAccount = account;
   state.channels = channels;
   state.liveCategories = [
     { id: 'all', name: 'Alla kanaler' },
@@ -319,7 +488,7 @@ function parseM3U(content) {
   ];
   state.movies = [];
   state.series = [];
-  renderCurrentTab();
+  saveAccounts();
 }
 
 // Demo Mode Launcher
@@ -341,6 +510,7 @@ const miniPlayer = document.getElementById('mini-player');
 const channelDrawer = document.getElementById('player-drawer');
 
 function playMedia(item) {
+  if (!item || !item.url) return;
   state.nowPlaying = item;
   state.isPlaying = true;
 
@@ -352,11 +522,11 @@ function playMedia(item) {
   videoOverlay.style.display = 'flex';
   miniPlayer.style.display = 'none';
 
-  // HLS stream playback: Native Safari/iOS vs Hls.js fallback
+  // HLS stream playback: Native Apple iOS Safari vs Hls.js fallback
   if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-    // Native Apple iOS Safari hardware HLS
+    // Native Apple iOS hardware HLS
     videoEl.src = item.url;
-    videoEl.play().catch(e => console.log('Autoplay deferred:', e));
+    videoEl.play().catch(e => console.log('Autoplay:', e));
   } else if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
     if (state.hlsInstance) state.hlsInstance.destroy();
     const hls = new Hls({ enableWorker: true });
@@ -366,10 +536,9 @@ function playMedia(item) {
     hls.on(Hls.Events.MANIFEST_PARSED, () => videoEl.play());
   } else {
     videoEl.src = item.url;
-    videoEl.play().catch(e => console.log('Autoplay deferred:', e));
+    videoEl.play().catch(e => console.log('Autoplay:', e));
   }
 
-  // Populate drawer
   renderZapperDrawer();
 }
 
@@ -430,7 +599,7 @@ function renderZapperDrawer() {
   `).join('');
 }
 
-// Views Rendering
+// Tab Switching
 function switchTab(tab) {
   state.currentTab = tab;
   document.querySelectorAll('.nav-item').forEach(el => {
@@ -469,7 +638,7 @@ function renderHome(container) {
         <div class="hero-tag">🔥 Utvalt Just Nu</div>
         <div class="hero-title">${hero.name}</div>
         <div class="hero-desc">${hero.plot || hero.epg || 'Se direktsänd TV och VOD i högsta kvalitet.'}</div>
-        <button class="btn-play-hero" onclick="playMedia(${JSON.stringify(hero).replace(/"/g, '&quot;')})">
+        <button class="btn-play-hero" onclick="playMedia(state.movies[0] || state.channels[0])">
           ▶ Spela Nu
         </button>
       </div>
@@ -707,11 +876,75 @@ function renderSettings(container) {
 // Modal System
 function openAccountModal() {
   document.getElementById('account-modal').style.display = 'flex';
+  hideModalStatus();
+  switchModalTab('xtream');
 }
 
 function closeModal() {
   document.getElementById('account-modal').style.display = 'none';
   document.getElementById('detail-modal').style.display = 'none';
+}
+
+function switchModalTab(tab) {
+  document.getElementById('tab-btn-xtream').classList.toggle('active', tab === 'xtream');
+  document.getElementById('tab-btn-m3u').classList.toggle('active', tab === 'm3u');
+  document.getElementById('tab-btn-saved').classList.toggle('active', tab === 'saved');
+
+  document.getElementById('modal-sec-xtream').style.display = tab === 'xtream' ? 'block' : 'none';
+  document.getElementById('modal-sec-m3u').style.display = tab === 'm3u' ? 'block' : 'none';
+  document.getElementById('modal-sec-saved').style.display = tab === 'saved' ? 'block' : 'none';
+
+  if (tab === 'saved') {
+    renderSavedAccounts();
+  }
+}
+
+function renderSavedAccounts() {
+  const list = document.getElementById('saved-accounts-list');
+  if (state.accounts.length === 0) {
+    list.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 20px;">Inga sparade konton än.</div>`;
+    return;
+  }
+  list.innerHTML = state.accounts.map(acc => `
+    <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-weight: 800; font-size: 15px; margin-bottom: 2px;">
+          ${acc.name}
+          ${acc.id === state.activeAccount?.id ? '<span style="font-size: 10px; background: #30D158; color: #fff; padding: 2px 6px; border-radius: 99px; margin-left: 6px;">AKTIV</span>' : ''}
+        </div>
+        <div style="font-size: 12px; color: var(--text-dim);">${acc.type === 'xtream' ? acc.serverUrl : 'M3U Spellista'}</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-header" onclick="activateAccount('${acc.id}')">Välj</button>
+        <button class="btn-header" style="color: #FF375F;" onclick="deleteAccount('${acc.id}')">Ta bort</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function activateAccount(id) {
+  const acc = state.accounts.find(a => a.id === id);
+  if (!acc) return;
+  state.activeAccount = acc;
+  if (acc.type === 'xtream') {
+    document.getElementById('xtream-name').value = acc.name;
+    document.getElementById('xtream-server').value = acc.serverUrl;
+    document.getElementById('xtream-user').value = acc.username;
+    document.getElementById('xtream-pass').value = acc.password;
+    handleXtreamSubmit({ preventDefault: () => {} });
+  } else {
+    closeModal();
+    renderCurrentTab();
+  }
+}
+
+function deleteAccount(id) {
+  state.accounts = state.accounts.filter(a => a.id !== id);
+  saveAccounts();
+  if (state.activeAccount?.id === id) {
+    launchDemo();
+  }
+  renderSavedAccounts();
 }
 
 function openMovieModal(id) {
@@ -758,65 +991,22 @@ function openSeriesModal(id) {
   modal.style.display = 'flex';
 }
 
-// Account Form Handlers
-function saveXtreamForm(e) {
-  e.preventDefault();
-  const name = document.getElementById('xtream-name').value || 'Mitt IPTV';
-  const server = document.getElementById('xtream-server').value;
-  const user = document.getElementById('xtream-user').value;
-  const pass = document.getElementById('xtream-pass').value;
-
-  const newAcc = {
-    id: 'acc_' + Date.now(),
-    name,
-    type: 'xtream',
-    serverUrl: server,
-    username: user,
-    password: pass
-  };
-
-  state.accounts.push(newAcc);
-  state.activeAccount = newAcc;
-  saveAccounts();
-  closeModal();
-  loadXtreamAccount(newAcc);
-}
-
-function saveM3UForm(e) {
-  e.preventDefault();
-  const name = document.getElementById('m3u-name').value || 'M3U Spellista';
-  const url = document.getElementById('m3u-url').value;
-
-  const newAcc = {
-    id: 'acc_' + Date.now(),
-    name,
-    type: 'm3u',
-    url
-  };
-
-  state.accounts.push(newAcc);
-  state.activeAccount = newAcc;
-  saveAccounts();
-  closeModal();
-
-  fetch(url)
-    .then(r => r.text())
-    .then(content => parseM3U(content))
-    .catch(err => alert('Kunde inte läsa M3U-spellistan: ' + err.message));
-}
-
 // Initial Boot
 window.addEventListener('DOMContentLoaded', () => {
   // Service Worker Registration for PWA Standalone Mode
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg failed:', err));
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg:', err));
   }
 
   // Load active account or demo
   if (state.accounts.length > 0) {
     state.activeAccount = state.accounts[0];
     if (state.activeAccount.type === 'xtream') {
-      loadXtreamAccount(state.activeAccount);
+      document.getElementById('xtream-name').value = state.activeAccount.name;
+      document.getElementById('xtream-server').value = state.activeAccount.serverUrl;
+      document.getElementById('xtream-user').value = state.activeAccount.username;
+      document.getElementById('xtream-pass').value = state.activeAccount.password;
+      handleXtreamSubmit({ preventDefault: () => {} });
     } else {
       launchDemo();
     }
