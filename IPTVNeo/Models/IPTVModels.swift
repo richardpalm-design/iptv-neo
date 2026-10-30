@@ -16,6 +16,30 @@ struct IPTVAccount: Identifiable, Codable, Equatable {
     var createdAt: Date = Date()
     var status: String = "Active"
     var expDate: String? = nil
+
+    init(
+        id: String = UUID().uuidString,
+        name: String,
+        type: AccountType,
+        serverUrl: String = "",
+        username: String = "",
+        password: String = "",
+        m3uUrl: String? = nil,
+        createdAt: Date = Date(),
+        status: String = "Active",
+        expDate: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.serverUrl = serverUrl
+        self.username = username
+        self.password = password
+        self.m3uUrl = m3uUrl
+        self.createdAt = createdAt
+        self.status = status
+        self.expDate = expDate
+    }
 }
 
 struct CategoryItem: Identifiable, Hashable {

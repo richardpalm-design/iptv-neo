@@ -1,20 +1,13 @@
-const CACHE_NAME = 'iptv-neo-v1';
+const CACHE_NAME = 'iptv-neo-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './css/app.css',
-  './js/app.js',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  './js/app.js'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -22,25 +15,19 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys.map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Network-First Strategy: Always fetch fresh code from server; only use cache if totally offline
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  // Only cache same-origin assets, let streaming requests go direct to network
-  if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        return cachedResponse || fetch(event.request);
-      })
-    );
-  }
+  event.respondWith(
+    fetch(event.request).then((networkResponse) => {
+      return networkResponse;
+    }).catch(() => {
+      return caches.match(event.request);
+    })
+  );
 });
