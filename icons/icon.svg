@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1626"/>
+      <stop offset="100%" stop-color="#07090E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D2FF"/>
+      <stop offset="50%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#AF52DE"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- App Background with Rounded Squircle -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  <rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="url(#accent)" stroke-width="3" opacity="0.4"/>
+  
+  <!-- Subtle Glow -->
+  <circle cx="256" cy="240" r="140" fill="url(#glow)"/>
+  
+  <!-- TV Antenna Lines -->
+  <path d="M 190 120 L 256 185 L 322 120" stroke="url(#accent)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- TV Monitor Body -->
+  <rect x="100" y="185" width="312" height="210" rx="36" fill="#131C2E" stroke="url(#accent)" stroke-width="14"/>
+  
+  <!-- Play Symbol inside Screen -->
+  <polygon points="230,245 230,335 305,290" fill="url(#accent)"/>
+  
+  <!-- Power LED -->
+  <circle cx="370" cy="360" r="6" fill="#00D2FF"/>
+  
+  <!-- Stand -->
+  <path d="M 220 395 L 200 425 L 312 425 L 292 395" fill="#182338"/>
+</svg>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>IPTV Neo</title>
+  
+  <!-- PWA & iOS Home Screen Capabilities -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#07090E">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IPTV Neo">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  
+  <!-- Styling -->
+  <link rel="stylesheet" href="./css/app.css">
+  
+  <!-- HLS Fallback for non-Safari browsers -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+</head>
+<body>
+  <div id="app-container">
+    <!-- Glass Header -->
+    <header class="app-header">
+      <div>
+        <div class="brand-title">IPTV NEO</div>
+        <div id="brand-account" class="brand-account">Laddar...</div>
+      </div>
+      <button class="btn-header" onclick="openAccountModal()">
+        <span>👤</span>
+        <span>Byt konto</span>
+      </button>
+    </header>
+
+    <!-- Scrollable Tab Content Container -->
+    <main id="tab-content" class="main-content">
+      <!-- Injected via js/app.js -->
+    </main>
+
+    <!-- Floating Mini Player -->
+    <div id="mini-player" class="mini-player-bar" style="display: none;" onclick="expandPlayer()">
+      <div class="mini-indicator"></div>
+      <div class="mini-info">
+        <div id="mini-title" class="mini-title">Spelar...</div>
+        <div id="mini-sub" class="mini-sub">Livesändning</div>
+      </div>
+      <span style="font-size: 16px; color: var(--primary);">▲</span>
+    </div>
+
+    <!-- Frosted Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-tab="home" onclick="switchTab('home')">
+        <span class="nav-icon">🏠</span>
+        <span>Hem</span>
+      </div>
+      <div class="nav-item" data-tab="live" onclick="switchTab('live')">
+        <span class="nav-icon">📺</span>
+        <span>Live TV</span>
+      </div>
+      <div class="nav-item" data-tab="movies" onclick="switchTab('movies')">
+        <span class="nav-icon">🎬</span>
+        <span>Filmer</span>
+      </div>
+      <div class="nav-item" data-tab="series" onclick="switchTab('series')">
+        <span class="nav-icon">🎞️</span>
+        <span>Serier</span>
+      </div>
+      <div class="nav-item" data-tab="settings" onclick="switchTab('settings')">
+        <span class="nav-icon">⚙️</span>
+        <span>Inställningar</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Fullscreen Native Video Player Overlay -->
+  <div id="video-overlay" class="video-overlay-modal" style="display: none;">
+    <div class="video-container" onclick="document.querySelector('.player-controls-hud').classList.toggle('hidden')">
+      <video id="main-video" playsinline webkit-playsinline x5-playsinline></video>
+      
+      <!-- Video HUD Overlay -->
+      <div class="player-controls-hud">
+        <div class="hud-top">
+          <button class="hud-btn" onclick="minimizePlayer()">▼</button>
+          <div class="hud-channel-info">
+            <div id="hud-channel-name" class="hud-channel-name">Kanalnamn</div>
+            <div id="hud-channel-sub" class="hud-channel-sub">Livesändning</div>
+          </div>
+          <button class="hud-btn" onclick="toggleChannelDrawer()">📺</button>
+        </div>
+
+        <div class="hud-bottom">
+          <button id="btn-play-pause" class="hud-btn" onclick="togglePlay()">⏸</button>
+          <div style="flex: 1;"></div>
+          <button class="hud-btn" title="Bild-i-bild" onclick="togglePiP()">🗔</button>
+          <button class="hud-btn" title="AirPlay" onclick="toggleAirPlay()">📡</button>
+        </div>
+      </div>
+
+      <!-- Quick Channel Zapper Drawer -->
+      <div id="player-drawer" class="player-drawer">
+        <div class="drawer-header">
+          <div style="font-weight: 800; font-size: 16px;">Snabbyte kanaler</div>
+          <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="toggleChannelDrawer()">✕</button>
+        </div>
+        <div id="drawer-channels-list" class="drawer-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Modal -->
+  <div id="account-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-size: 18px; font-weight: 800;">Hantera Konton</div>
+        <button class="hud-btn" style="width: 32px; height: 32px; font-size: 14px;" onclick="closeModal()">✕</button>
+      </div>
+
+      <!-- 1-Click Demo Launcher -->
+      <div class="hero-card" style="margin: 0 0 20px 0; border-color: var(--accent-cyan);">
+        <div style="font-weight: 800; font-size: 16px; margin-bottom: 4px;">🚀 Vill du prova direkt?</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Starta demo-läge med nordiska kanaler (SVT, TV4, Viasat Sport) och VOD-filmer.</div>
+        <button class="btn-play-hero" onclick="launchDemo()">▶ Starta Demo Nu</button>
+      </div>
+
+      <!-- Xtream Codes Form -->
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Lägg till Xtream Codes</div>
+        <form onsubmit="saveXtreamForm(event)">
+          <div class="form-group">
+            <label class="form-label">Kontonamn</label>
+            <input id="xtream-name" class="form-input" placeholder="Mitt IPTV" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Server URL</label>
+            <input id="xtream-server" class="form-input" placeholder="http://server.com:8080" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Användarnamn</label>
+            <input id="xtream-user" class="form-input" placeholder="Användare" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lösenord</label>
+            <input id="xtream-pass" type="password" class="form-input" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn-primary">Anslut & Spara</button>
+        </form>
+      </div>
+
+      <!-- M3U Playlist Form -->
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px;">
+        <div style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Lägg till M3U-spellista</div>
+        <form onsubmit="saveM3UForm(event)">
+          <div class="form-group">
+            <label class="form-label">Namn på spellista</label>
+            <input id="m3u-name" class="form-input" placeholder="Min Spellista" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">M3U URL</label>
+            <input id="m3u-url" class="form-input" placeholder="http://.../playlist.m3u" required>
+          </div>
+          <button type="submit" class="btn-primary">Ladda Spellista</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail / Synopsis Modal -->
+  <div id="detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content"></div>
+  </div>
+
+  <!-- Application Script -->
+  <script src="./js/app.js"></script>
+</body>
+</html>
