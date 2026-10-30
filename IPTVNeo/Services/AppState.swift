@@ -19,6 +19,9 @@ class AppState: ObservableObject {
     // Series Data
     @Published var series: [SeriesItem] = []
     
+    // Navigation Tab
+    @Published var selectedTab: Int = 0
+    
     // UI Filters
     @Published var searchQuery: String = ""
     @Published var showFavoritesOnly: Bool = false

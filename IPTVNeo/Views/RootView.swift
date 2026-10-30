@@ -2,12 +2,11 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var appState: AppState
-    @State private var selectedTab: Int = 0
     
     var body: some View {
         ZStack(alignment: .bottom) {
             // Main Content Tabs
-            TabView(selection: $selectedTab) {
+            TabView(selection: $appState.selectedTab) {
                 HomeView()
                     .tag(0)
                 
@@ -100,15 +99,15 @@ struct RootView: View {
         Button(action: {
             let impact = UIImpactFeedbackGenerator(style: .light)
             impact.impactOccurred()
-            selectedTab = tag
+            appState.selectedTab = tag
         }) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
                 Text(label)
-                    .font(.system(size: 10, weight: selectedTab == tag ? .bold : .medium))
+                    .font(.system(size: 10, weight: appState.selectedTab == tag ? .bold : .medium))
             }
-            .foregroundColor(selectedTab == tag ? AppTheme.primary : AppTheme.textSecondary)
+            .foregroundColor(appState.selectedTab == tag ? AppTheme.primary : AppTheme.textSecondary)
             .frame(width: 50)
         }
     }

@@ -15,7 +15,7 @@
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="./css/app.css?v=3.1">
+  <link rel="stylesheet" href="./css/app.css?v=3.2">
   
   <!-- HLS Fallback for non-Safari browsers -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
@@ -24,12 +24,17 @@
   <div id="app-container">
     <!-- Glass Header -->
     <header class="app-header">
-      <div>
-        <div class="brand-title">IPTV NEO</div>
-        <div id="brand-account" class="brand-account">Laddar...</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="btn-header-back" class="btn-header" style="display: none; padding: 6px 12px; font-weight: 700; color: var(--primary);" onclick="switchTab('home')">
+          <span>‹ Startsida</span>
+        </button>
+        <div>
+          <div class="brand-title" style="cursor: pointer;" onclick="switchTab('home')">IPTV NEO</div>
+          <div id="brand-account" class="brand-account">Laddar...</div>
+        </div>
       </div>
       <button class="btn-header" onclick="openAccountModal()">
-        <span>ðŸ‘¤</span>
+        <span>👤</span>
         <span>Byt konto</span>
       </button>
     </header>
@@ -82,7 +87,7 @@
       <!-- Video HUD Overlay -->
       <div class="player-controls-hud">
         <div class="hud-top">
-          <button class="hud-btn" onclick="minimizePlayer()">â–¼</button>
+          <button class="btn-header" style="background: rgba(0,0,0,0.6); padding: 8px 14px; font-weight: 800; font-size: 13px;" onclick="minimizePlayer()">‹ Tillbaka</button>
           <div class="hud-channel-info">
             <div id="hud-channel-name" class="hud-channel-name">Kanalnamn</div>
             <div id="hud-channel-sub" class="hud-channel-sub">LivesÃ¤ndning</div>
@@ -196,6 +201,6 @@
   </div>
 
   <!-- Application Script -->
-  <script src="./js/app.js?v=3.1"></script>
+  <script src="./js/app.js?v=3.2"></script>
 </body>
 </html>

@@ -20,6 +20,36 @@ struct MoviesView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Top Navigation Bar with Back Button
+            HStack {
+                Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
+                    appState.selectedTab = 0
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Startsida")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(AppTheme.primary)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(8)
+                }
+                Spacer()
+                Text("Filmer")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Spacer()
+                Color.clear.frame(width: 80, height: 1)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            
             // Category pills
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
