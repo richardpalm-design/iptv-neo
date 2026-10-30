@@ -1,5 +1,23 @@
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+
+let swiftVersion = '';
+try {
+  swiftVersion = execSync('swift --version').toString();
+} catch (e) {
+  swiftVersion = '';
+}
+
+console.log('Active Swift environment:\n', swiftVersion);
+
+// If Swift version is 6.2 or higher, all Swift 6.2 features work natively out of the box!
+if (/Swift version (6\.[2-9]|[7-9]\.)/.test(swiftVersion)) {
+  console.log('Swift is 6.2+, no patching needed. Preserving native packages.');
+  process.exit(0);
+}
+
+console.log('Swift is older than 6.2, patching packages for backwards compatibility...');
 
 function walk(dir) {
   let results = [];
@@ -21,22 +39,15 @@ function patchFile(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
   const original = content;
 
-  // 1. Lower swift-tools-version to 6.0
   content = content.replace(/swift-tools-version:\s*6\.\d+/g, 'swift-tools-version: 6.0');
-
-  // 2. Remove swiftLanguageModes: [.v6]
   content = content.replace(/swiftLanguageModes:\s*\[\.v6\],?/g, '');
-
-  // 3. Remove trailing comma before closing parenthesis
   content = content.replace(/,(\s*\))/g, '$1');
 
   if (content !== original) {
     fs.writeFileSync(filePath, content, 'utf8');
-    console.log('Successfully patched Package.swift:', filePath);
+    console.log('Patched Package.swift:', filePath);
   }
 }
 
-// Patch node_modules and ios
 const targetFiles = walk('node_modules').concat(walk('ios'));
-console.log(`Found ${targetFiles.length} Package.swift files to inspect.`);
 targetFiles.forEach(patchFile);
